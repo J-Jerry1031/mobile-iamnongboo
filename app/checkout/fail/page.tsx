@@ -1,0 +1,2 @@
+import Link from 'next/link';
+export default async function FailPage({ searchParams }: { searchParams: Promise<{ code?: string; message?: string }> }) { const p = await searchParams; return <div className="px-5 pt-10 text-center"><div className="text-5xl">🥲</div><h1 className="mt-4 text-2xl font-black text-[#214b36]">결제가 취소/실패됐어요</h1><p className="mt-3 text-sm">{p.message || p.code}</p><Link href="/cart" className="mt-5 inline-block rounded-2xl bg-[#214b36] px-5 py-3 font-black text-white">장바구니로</Link></div>; }
