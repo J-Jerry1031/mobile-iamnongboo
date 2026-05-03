@@ -24,3 +24,6 @@ a { -webkit-tap-highlight-color: transparent; }
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
