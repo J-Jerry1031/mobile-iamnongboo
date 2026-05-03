@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -28,30 +28,34 @@ enum InquiryStatus {
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   name      String
-  email     String   @unique
+  email     String     @unique
   phone     String?
   password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
+  role      Role       @default(USER)
+  points    Int        @default(0)
+  createdAt DateTime   @default(now())
   orders    Order[]
   reviews   Review[]
   inquiries Inquiry[]
+  pointLogs PointLog[]
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  category    String
-  description String
-  price       Int
-  image       String
-  badge       String?
-  stock       Int      @default(100)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  reviews     Review[]
+  id           String   @id @default(cuid())
+  name         String   @unique
+  category     String
+  description  String
+  price        Int
+  image        String
+  badge        String?
+  stock        Int      @default(100)
+  isActive     Boolean  @default(true)
+  isFarmerPick Boolean  @default(false)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  reviews      Review[]
 }
 
 model Order {
@@ -71,9 +75,9 @@ model Order {
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
+  id        String @id @default(cuid())
   orderId   String
-  order     Order   @relation(fields: [orderId], references: [id])
+  order     Order  @relation(fields: [orderId], references: [id])
   productId String
   name      String
   price     Int
@@ -89,6 +93,8 @@ model Review {
   rating    Int
   content   String
   createdAt DateTime @default(now())
+
+  @@unique([productId, userId])
 }
 
 model Inquiry {
@@ -100,4 +106,15 @@ model Inquiry {
   answer    String?
   status    InquiryStatus @default(OPEN)
   createdAt DateTime      @default(now())
+}
+
+model PointLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  amount    Int
+  reason    String
+  refType   String?
+  refId     String?
+  createdAt DateTime @default(now())
 }
