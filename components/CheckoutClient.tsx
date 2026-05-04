@@ -17,7 +17,7 @@ export function CheckoutClient() {
   async function pay() {
     try {
       if (!items.length) return alert('장바구니가 비어 있어요.');
-      if (!buyerName || !buyerPhone) return alert('이름과 연락처를 입력해줘.');
+      if (!buyerName || !buyerPhone) return alert('이름과 연락처를 읿력해주세요.');
       setLoading(true);
       const tossOrderId = `IAMNONGBU-${Date.now()}`;
       const createRes = await fetch('/api/orders/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items, buyerName, buyerPhone, address, tossOrderId }) });
@@ -28,9 +28,16 @@ export function CheckoutClient() {
       clear();
       await payment.requestPayment({ method: 'CARD', amount: { currency: 'KRW', value: total }, orderId: tossOrderId, orderName: items.length === 1 ? items[0].name : `${items[0].name} 외 ${items.length - 1}건`, successUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success`, failUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/fail`, customerName: buyerName, customerMobilePhone: buyerPhone.replaceAll('-', '') });
     } catch (error) {
-      alert(error instanceof Error ? error.message : '결제 준비 중 문제가 생겼어요.');
-      setLoading(false);
-    }
+  console.error('TOSS_PAYMENT_ERROR:', error);
+
+  if (error instanceof Error) {
+    console.error('TOSS_PAYMENT_ERROR_MESSAGE:', error.message);
+    console.error('TOSS_PAYMENT_ERROR_STACK:', error.stack);
+  }
+
+  alert(error instanceof Error ? error.message : '결제 준비 중 문제가 생겼어요.');
+  setLoading(false);
+}
   }
 
   return (

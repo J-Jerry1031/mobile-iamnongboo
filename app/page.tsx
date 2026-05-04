@@ -1,170 +1,188 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import { Footer } from '@/components/Footer';
 import { won } from '@/lib/format';
-import { ProductImage } from '@/components/ProductImage';
-import { HomeHeroSlider } from '@/components/HomeHeroSlider';
+import { Search, ChevronRight } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-const homeCategories = [
-  { label: '🍎 과일', value: '과일' },
-  { label: '🥬 채소', value: '채소' },
-  { label: '🐟 수산', value: '수산물' },
-  { label: '🍠 간식', value: '간식' },
+const categories = [
+  { label: '유기농', emoji: '🌱', value: '유기농' },
+  { label: '과일', emoji: '🍎', value: '과일' },
+  { label: '건어물', emoji: '🐟', value: '수산물' },
+  { label: '생활품', emoji: '🧴', value: '생활용품' },
 ];
 
-function ProductSection({
-  title,
-  subtitle,
-  products,
-}: {
-  title: string;
-  subtitle?: string;
-  products: any[];
-}) {
-  if (!products.length) return null;
-
-  return (
-    <section className="px-5 pt-8">
-      <div className="mb-4">
-        <h2 className="text-xl font-black text-[#214b36]">{title}</h2>
-        {subtitle && <p className="mt-1 text-sm text-[#7a6b4d]">{subtitle}</p>}
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        {products.map((p) => (
-          <Link
-            key={p.id}
-            href={`/products/${p.id}`}
-            className="block rounded-3xl bg-white p-3 shadow-sm active:scale-[.99]"
-          >
-            <ProductImage src={p.image} name={p.name} />
-
-            {p.badge && (
-              <p className="mt-3 inline-flex rounded-full bg-[#e5f0dc] px-2 py-1 text-[10px] font-black text-[#214b36]">
-                {p.badge}
-              </p>
-            )}
-
-            <p className="mt-2 line-clamp-2 text-sm font-black">{p.name}</p>
-
-            <p className="mt-1 text-sm font-bold text-[#214b36]">
-              {won(p.price)}
-            </p>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export default async function HomePage() {
-  const farmerPicks = await prisma.product.findMany({
-    where: {
-      isActive: true,
-      isFarmerPick: true,
-    },
-    take: 5,
-    orderBy: [
-      { sortOrder: 'asc' },
-      { createdAt: 'desc' },
-    ],
-  });
-
-  const recommended = await prisma.product.findMany({
+  const products = await prisma.product.findMany({
     where: { isActive: true },
-    take: 6,
-    orderBy: [
-      { sortOrder: 'asc' },
-      { createdAt: 'desc' },
-    ],
+    take: 8,
+    orderBy: { createdAt: 'desc' },
   });
 
-  const bestsellerGroups = await prisma.orderItem.groupBy({
-    by: ['productId'],
-    where: {
-      order: {
-        status: 'PAID',
-      },
-    },
-    _sum: {
-      quantity: true,
-    },
-    orderBy: {
-      _sum: {
-        quantity: 'desc',
-      },
-    },
-    take: 6,
-  });
-
-  const bestsellerIds = bestsellerGroups.map((x) => x.productId);
-
-  const bestsellerProductsRaw = bestsellerIds.length
-    ? await prisma.product.findMany({
-        where: {
-          id: { in: bestsellerIds },
-          isActive: true,
-        },
-      })
-    : [];
-
-  const bestsellerProducts = bestsellerIds
-    .map((id) => bestsellerProductsRaw.find((p) => p.id === id))
-    .filter(Boolean);
-
-  const fallbackBestsellers = bestsellerProducts.length
-    ? bestsellerProducts
-    : recommended.slice(0, 4);
-
-  const slidesSource = farmerPicks.length ? farmerPicks : recommended.slice(0, 3);
-
-  const slides = slidesSource.map((p) => ({
-    id: p.id,
-    title: p.name,
-    subtitle: p.description,
-    image: p.image,
-    href: `/products/${p.id}`,
-  }));
+  const newProducts = products.slice(0, 5);
+  const categoryProducts = products.slice(0, 3);
 
   return (
-    <>
-      <HomeHeroSlider slides={slides} />
+    <div className="bg-white pb-10">
+      {/* 검색창 */}
+      <section className="px-6 pt-5">
+        <div className="flex h-[58px] items-center gap-3 rounded-[22px] bg-[#f1f1f1] px-5 text-[#777]">
+          <Search size={26} strokeWidth={2.2} />
+          <span className="text-[16px] font-medium">
+            자연이 키운 건강한 먹거리를 검색해보세요
+          </span>
+        </div>
+      </section>
 
-      <section className="px-5 pt-7">
-        <div className="grid grid-cols-4 gap-2 text-center text-xs font-bold text-[#214b36]">
-          {homeCategories.map((cat) => (
+      {/* 카테고리 원형 메뉴 */}
+      <section className="border-b border-[#eeeeee] px-6 pb-6 pt-6">
+        <div className="grid grid-cols-4 gap-4 text-center">
+          {categories.map((cat, index) => (
             <Link
               key={cat.value}
               href={`/products/market?category=${encodeURIComponent(cat.value)}`}
-              className="block rounded-2xl bg-white p-3 shadow-sm active:scale-[.98]"
+              className="flex flex-col items-center gap-3"
             >
-              {cat.label}
+              <div
+                className={`flex h-[72px] w-[72px] items-center justify-center rounded-full text-3xl ${
+                  index === 0 ? 'bg-[#6f9878]' : 'bg-[#f2f2f2]'
+                }`}
+              >
+                {cat.emoji}
+              </div>
+              <span className="text-[15px] font-bold text-[#1f2a24]">
+                {cat.label}
+              </span>
             </Link>
           ))}
         </div>
       </section>
 
-      <ProductSection
-        title="오늘의 농부 PICK"
-        subtitle="아이엠농부가 오늘 가장 먼저 추천하는 상품이에요."
-        products={farmerPicks.length ? farmerPicks : recommended.slice(0, 4)}
-      />
+      {/* Weekly Best 배너 */}
+      <section className="px-6 pt-7">
+        <Link
+          href="/products/market"
+          className="relative block h-[220px] overflow-hidden rounded-[24px] bg-[#eee4d5]"
+        >
+          <img
+            src="/banners/weekly-best.jpg"
+            alt="이번 주 인기 상품 모음"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
 
-      <ProductSection
-        title="추천상품"
-        subtitle="동탄 아이엠농부에서 지금 보기 좋은 신선상품이에요."
-        products={recommended}
-      />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#efe4d1]/95 via-[#efe4d1]/70 to-transparent" />
 
-      <ProductSection
-        title="베스트셀러"
-        subtitle="실제 주문 데이터를 기준으로 많이 팔린 상품이에요."
-        products={fallbackBestsellers as any[]}
-      />
+          <div className="relative z-10 p-6">
+            <span className="inline-flex bg-[#668f6b] px-3 py-1 text-[13px] font-bold text-white">
+              WEEKLY BEST
+            </span>
 
-      <Footer />
-    </>
+            <h1 className="mt-5 text-[30px] font-black leading-[1.18] text-[#252837]">
+              이번 주
+              <br />
+              인기 상품 모음
+            </h1>
+
+            <p className="mt-4 text-[14px] leading-6 text-[#333]">
+              믿을 수 있는 자연의 선물
+              <br />
+              지금 가장 사랑받는 상품을 만나보세요
+            </p>
+
+            <span className="mt-5 inline-flex items-center gap-3 rounded-full bg-[#668f6b] px-5 py-3 text-[14px] font-bold text-white">
+              더 알아보기 <ChevronRight size={18} />
+            </span>
+          </div>
+        </Link>
+      </section>
+
+      {/* 신상품 */}
+      <section className="pt-8">
+        <div className="flex items-center justify-between px-6">
+          <h2 className="text-[24px] font-black text-[#232633]">신상품</h2>
+          <Link
+            href="/products/market"
+            className="flex items-center gap-1 text-[15px] font-medium text-[#222]"
+          >
+            전체보기 <ChevronRight size={18} />
+          </Link>
+        </div>
+
+        <div className="mt-5 flex gap-4 overflow-x-auto px-6 pb-2">
+          {newProducts.map((p) => (
+            <Link
+              key={p.id}
+              href={`/products/${p.id}`}
+              className="w-[168px] shrink-0 overflow-hidden rounded-[20px] border border-[#eee] bg-white"
+            >
+              <img
+                src={p.image}
+                alt={p.name}
+                className="h-[150px] w-full object-cover"
+              />
+
+              <div className="p-4">
+                <p className="line-clamp-1 text-[16px] font-black text-[#242733]">
+                  {p.name}
+                </p>
+                <p className="mt-1 line-clamp-1 text-[13px] text-[#777]">
+                  {p.description}
+                </p>
+                <p className="mt-3 text-[18px] font-black text-[#242733]">
+                  {won(p.price)}
+                </p>
+
+                <button className="mt-4 w-full rounded-full bg-[#668f6b] py-3 text-[14px] font-bold text-white">
+                  담기
+                </button>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* 카테고리 추천 */}
+      <section className="pt-8">
+        <div className="flex items-center justify-between px-6">
+          <h2 className="text-[24px] font-black text-[#232633]">
+            카테고리 추천
+          </h2>
+          <Link
+            href="/products/market"
+            className="flex items-center gap-1 text-[15px] font-medium text-[#222]"
+          >
+            전체보기 <ChevronRight size={18} />
+          </Link>
+        </div>
+
+        <div className="mt-5 flex gap-3 overflow-x-auto px-6 pb-8">
+          {categoryProducts.map((p) => (
+            <Link
+              key={p.id}
+              href={`/products/${p.id}`}
+              className="w-[132px] shrink-0 overflow-hidden rounded-[18px] border border-[#eee] bg-white"
+            >
+              <img
+                src={p.image}
+                alt={p.name}
+                className="h-[112px] w-full object-cover"
+              />
+
+              <div className="p-3">
+                <p className="text-[14px] font-black text-[#222]">
+                  {p.category}
+                </p>
+                <p className="mt-1 line-clamp-1 text-[11px] text-[#777]">
+                  {p.description}
+                </p>
+                <span className="mt-3 inline-flex rounded-full bg-[#668f6b] px-3 py-2 text-[11px] font-bold text-white">
+                  상품 보러가기
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }
