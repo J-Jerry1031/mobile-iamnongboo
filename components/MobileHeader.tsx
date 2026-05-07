@@ -1,21 +1,19 @@
 import Link from 'next/link';
+import { Menu } from 'lucide-react';
 
 export function MobileHeader() {
   return (
-    <header className="flex items-center justify-between px-4 py-3 bg-white">
-      <Link href="/" className="flex items-center gap-2">
-        
-        <img
-          src="/logo.png"
-          alt="아이엠농부"
-          className="h-6 w-auto"
-        />
+    <header className="sticky top-0 z-30 bg-white">
+      <div className="relative mx-auto flex h-[96px] max-w-[430px] items-center justify-center px-6">
+        <Link href="/" className="iam-farmer-logo" aria-label="IAM FARMER 홈">
+          <span>IAM</span>
+          <strong>FARMER</strong>
+        </Link>
 
-        <span className="text-lg font-black tracking-tight text-[#214b36]">
-          아이엠농부
-        </span>
-
-      </Link>
+        <button className="absolute right-6 top-1/2 -translate-y-1/2 text-[#1f2a24]">
+          <Menu size={30} strokeWidth={2.4} />
+        </button>
+      </div>
     </header>
   );
 }

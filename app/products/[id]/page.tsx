@@ -11,12 +11,20 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const product = await prisma.product.findUnique({ where: { id }, include: { reviews: { orderBy: { createdAt: 'desc' } } } });
   if (!product) notFound();
+  const averageRating = product.reviews.length
+  ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
+  : 0;
 
   return (
     <div className="px-5 pt-5">
       <ProductImage src={product.image} name={product.name} big />
       {product.badge && <p className="mt-5 inline-flex rounded-full bg-[#e5f0dc] px-3 py-1 text-xs font-black text-[#214b36]">{product.badge}</p>}
       <h1 className="mt-3 text-2xl font-black text-[#1f2a24]">{product.name}</h1>
+      {product.reviews.length > 0 && (
+  <p className="mt-2 text-sm font-bold text-[#7a6b4d]">
+    ⭐ {averageRating.toFixed(1)} / 후기 {product.reviews.length}개
+  </p>
+)}
       <p className="mt-2 text-2xl font-black text-[#214b36]">{won(product.price)}</p>
       <p className="mt-4 rounded-3xl bg-white p-5 text-sm leading-7 text-[#5b5141]">{product.description}</p>
       <AddToCartButton product={{ id: product.id, name: product.name, price: product.price, image: product.image }} />

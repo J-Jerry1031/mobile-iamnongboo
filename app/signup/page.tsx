@@ -11,7 +11,7 @@ export default function SignupPage() {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'test@iamnongbu.local', password: 'test1234!' }) });
-    if (!res.ok) { setError('현재 MVP에서는 테스트 고객 계정으로 로그인해줘.'); return; }
+    if (!res.ok) { setError('현재는 테스트 고객 계정으로 로그인해주세요.'); return; }
     router.push('/mypage');
     router.refresh();
   }
