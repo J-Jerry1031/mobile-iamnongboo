@@ -92,9 +92,11 @@ export default function InquiriesPage() {
       </section>
 
       <section className="story-split story-split-right">
-        <div className="story-split-image">
-          <img src="/story/store-full.jpg" alt="아이엠농부 매장 내부" />
-        </div>
+        <div
+          className="story-split-image story-crop story-crop-farmer-map"
+          role="img"
+          aria-label="농부들과 산지 직송을 표현한 지도와 채소 바구니"
+        />
         <div className="story-split-copy">
           <h2>
             진짜 농부의
@@ -139,7 +141,11 @@ export default function InquiriesPage() {
           </div>
         </div>
         <div className="story-split-image">
-          <img src="/story/store-full.jpg" alt="아이엠농부 친환경 매장" />
+          <div
+            className="story-crop story-crop-eco-store"
+            role="img"
+            aria-label="나무가 있는 아이엠농부 친환경 매장"
+          />
         </div>
       </section>
 
