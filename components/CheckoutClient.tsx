@@ -3,7 +3,8 @@
 import { loadTossPayments } from '@tosspayments/tosspayments-sdk';
 import { useCart } from '@/lib/cart-store';
 import { won } from '@/lib/format';
-import { CheckCircle2, CreditCard, MapPin, PackageCheck, ShieldCheck, Truck } from 'lucide-react';
+import { CheckCircle2, ChevronRight, CreditCard, MapPin, PackageCheck, ShieldCheck, ShoppingBag, Store, Truck } from 'lucide-react';
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 export function CheckoutClient() {
@@ -18,6 +19,14 @@ export function CheckoutClient() {
   const deliveryFee = deliveryMethod === 'pickup' || subtotal === 0 || subtotal >= 30000 ? 0 : 3000;
   const total = subtotal + deliveryFee;
   const normalizedPhone = buyerPhone.replaceAll('-', '').replaceAll(' ', '');
+  const firstMissing = useMemo(() => {
+    if (!items.length) return '장바구니에 상품을 담아주세요.';
+    if (!buyerName.trim()) return '주문자 이름을 입력해주세요.';
+    if (!/^01\d{8,9}$/.test(normalizedPhone)) return '연락처를 정확히 입력해주세요.';
+    if (deliveryMethod === 'delivery' && !address.trim()) return '배송지를 입력해주세요.';
+    if (!agree) return '주문 내용 확인 동의가 필요해요.';
+    return '안전 결제 준비가 완료됐어요.';
+  }, [address, agree, buyerName, deliveryMethod, items.length, normalizedPhone]);
   const canPay = useMemo(() => {
     if (!items.length) return false;
     if (!buyerName.trim()) return false;
@@ -61,13 +70,22 @@ export function CheckoutClient() {
   }
 
   return (
-    <div className="px-5 pt-5">
+    <div className="px-5 pb-40 pt-5">
       <div className="rounded-[24px] bg-[#214b36] p-5 text-white">
         <p className="text-[12px] font-bold text-[#f5d87a]">CHECKOUT</p>
         <h1 className="mt-2 text-2xl font-black">주문/결제</h1>
         <p className="mt-2 text-[13px] leading-5 text-white/75">
           주문 정보를 확인한 뒤 안전하게 결제를 진행해주세요.
         </p>
+      </div>
+
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {['정보입력', '수령방법', '결제확인'].map((step, index) => (
+          <div key={step} className={`rounded-2xl p-3 text-center text-xs font-black ${index === 2 && canPay ? 'bg-[#214b36] text-white' : 'bg-white text-[#214b36]'}`}>
+            <span className="mx-auto mb-2 grid h-6 w-6 place-items-center rounded-full bg-[#e5f0dc] text-[11px] text-[#214b36]">{index + 1}</span>
+            {step}
+          </div>
+        ))}
       </div>
 
       <section className="mt-5 rounded-3xl bg-white p-5">
@@ -92,8 +110,8 @@ export function CheckoutClient() {
         </h2>
         <div className="mt-4 grid grid-cols-2 gap-2">
           {[
-            { label: '매장 픽업', value: 'pickup' as const },
-            { label: '배송 받기', value: 'delivery' as const },
+            { label: '매장 픽업', value: 'pickup' as const, icon: Store },
+            { label: '배송 받기', value: 'delivery' as const, icon: Truck },
           ].map((option) => (
             <button
               key={option.value}
@@ -105,6 +123,7 @@ export function CheckoutClient() {
                   : 'bg-[#fffaf0] text-[#214b36]'
               }`}
             >
+              <option.icon className="mx-auto mb-2" size={18} />
               {option.label}
             </button>
           ))}
@@ -116,7 +135,7 @@ export function CheckoutClient() {
           <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={deliveryMethod === 'pickup' ? '예: 오후 6시 픽업 예정' : '주소와 공동현관 정보를 입력해주세요'} className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
         </label>
         <p className="mt-3 flex items-center gap-2 text-[12px] font-bold text-[#668f6b]">
-          <MapPin size={15} /> 매장 픽업은 배송비 없이 준비됩니다.
+          <MapPin size={15} /> {deliveryMethod === 'pickup' ? '매장 픽업은 배송비 없이 준비됩니다.' : '30,000원 이상 주문 시 배송비가 무료입니다.'}
         </p>
       </section>
 
@@ -136,9 +155,13 @@ export function CheckoutClient() {
             </div>
           ))}
           {!items.length && (
-            <p className="rounded-2xl bg-[#fffaf0] p-4 text-[#7a6b4d]">
-              장바구니에 담긴 상품이 없어요.
-            </p>
+            <div className="rounded-2xl bg-[#fffaf0] p-5 text-center text-[#7a6b4d]">
+              <ShoppingBag className="mx-auto text-[#668f6b]" size={34} />
+              <p className="mt-3 font-black text-[#1f2a24]">장바구니에 담긴 상품이 없어요.</p>
+              <Link href="/products/market" className="mt-4 inline-flex rounded-full bg-[#214b36] px-4 py-3 text-sm font-black text-white">
+                상품 보러가기
+              </Link>
+            </div>
           )}
         </div>
         <div className="mt-5 space-y-3 border-t border-[#eadfce] pt-4 text-sm font-bold text-[#5b5141]">
@@ -153,14 +176,20 @@ export function CheckoutClient() {
         <span>주문 상품, 수령 방법, 결제 금액을 확인했으며 개인정보 수집 및 결제 진행에 동의합니다.</span>
       </label>
 
-      <button disabled={loading || !canPay} onClick={pay} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#214b36] py-4 font-black text-white disabled:opacity-45">
-        <CreditCard size={19} /> {loading ? '결제 준비 중...' : `${won(total)} 결제하기`}
-      </button>
-      {canPay && (
-        <p className="mt-3 flex items-center justify-center gap-1 text-xs font-bold text-[#668f6b]">
-          <CheckCircle2 size={14} /> 안전 결제 준비가 완료됐어요.
-        </p>
-      )}
+      <div className={`mt-4 flex items-center gap-2 rounded-2xl p-4 text-xs font-bold ${canPay ? 'bg-[#e5f0dc] text-[#214b36]' : 'bg-white text-[#7a6b4d]'}`}>
+        <CheckCircle2 size={15} className={canPay ? 'text-[#214b36]' : 'text-[#b2a282]'} />
+        {firstMissing}
+      </div>
+
+      <div className="fixed bottom-[calc(73px+env(safe-area-inset-bottom))] left-1/2 z-[35] w-full max-w-[430px] -translate-x-1/2 border-t border-[#eadfce] bg-white/95 px-5 py-3 shadow-[0_-12px_28px_rgba(31,42,36,.1)] backdrop-blur">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-sm font-bold text-[#7a6b4d]">결제 예정금액</span>
+          <span className="text-xl font-black text-[#214b36]">{won(total)}</span>
+        </div>
+        <button disabled={loading || !canPay} onClick={pay} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#214b36] py-4 font-black text-white disabled:opacity-45 active:scale-[.99]">
+          <CreditCard size={19} /> {loading ? '결제 준비 중...' : '결제하기'} <ChevronRight size={18} />
+        </button>
+      </div>
     </div>
   );
 }
