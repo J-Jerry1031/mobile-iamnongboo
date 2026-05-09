@@ -28,13 +28,15 @@ export async function POST(req: Request) {
     where: { id: { in: productIds }, isActive: true },
   });
   const productMap = new Map(products.map((product) => [product.id, product]));
-  const orderItems = items.map((item) => {
+  const orderItems: { product: (typeof products)[number]; quantity: number }[] = [];
+
+  for (const item of items) {
     const product = productMap.get(item.id);
     const quantity = Math.max(1, Number(item.quantity || 1));
-    if (!product) throw new Error('판매 중인 상품만 주문할 수 있어요.');
-    if (product.stock < quantity) throw new Error(`${product.name} 재고가 부족해요.`);
-    return { product, quantity };
-  });
+    if (!product) return NextResponse.json({ message: '판매 중인 상품만 주문할 수 있어요.' }, { status: 400 });
+    if (product.stock < quantity) return NextResponse.json({ message: `${product.name} 재고가 부족해요.` }, { status: 400 });
+    orderItems.push({ product, quantity });
+  }
 
   const subtotal = orderItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const deliveryFee = deliveryMethod === 'delivery' && subtotal < 30000 ? 3000 : 0;

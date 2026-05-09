@@ -126,6 +126,11 @@ export default async function ProductList({
           >
             <div className="relative">
               <ProductImage src={p.image} name={p.name} />
+              {p.stock <= 0 && (
+                <div className="absolute inset-0 grid place-items-center rounded-2xl bg-black/45 text-sm font-black text-white">
+                  품절
+                </div>
+              )}
               {p.badge && (
                 <p className="absolute left-2 top-2 inline-flex rounded-full bg-white/90 px-2 py-1 text-[10px] font-black text-[#214b36]">
                   {p.badge}
@@ -144,7 +149,7 @@ export default async function ProductList({
                 <Truck size={13} /> 산지직송
               </span>
               <span className="flex items-center gap-1">
-                <BadgeCheck size={13} /> 신선보장
+                <BadgeCheck size={13} /> {p.stock > 0 ? '신선보장' : '입고대기'}
               </span>
             </div>
           </Link>

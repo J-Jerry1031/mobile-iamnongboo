@@ -1,3 +1,43 @@
 'use client';
 import { useRouter } from 'next/navigation';
-export function AdminOrderButtons({ orderId }: { orderId: string }) { const router = useRouter(); async function updateStatus(status: string) { await fetch('/api/orders/status', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId, status }) }); router.refresh(); } return <div className="mt-3 grid grid-cols-2 gap-2"><button onClick={() => updateStatus('CANCELED')} className="rounded-2xl bg-red-50 py-3 text-xs font-black text-red-600">취소승인</button><button onClick={() => updateStatus('RETURNED')} className="rounded-2xl bg-orange-50 py-3 text-xs font-black text-orange-600">반품승인</button><button onClick={() => updateStatus('PAID')} className="rounded-2xl bg-green-50 py-3 text-xs font-black text-green-700">결제완료</button><button onClick={() => updateStatus('READY')} className="rounded-2xl bg-gray-100 py-3 text-xs font-black text-gray-700">대기처리</button></div>; }
+
+export function AdminOrderButtons({ orderId, status }: { orderId: string; status: string }) {
+  const router = useRouter();
+
+  async function updateStatus(nextStatus: string) {
+    const res = await fetch('/api/orders/status', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, status: nextStatus }),
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      alert(error.message || '상태 변경 실패');
+      return;
+    }
+
+    router.refresh();
+  }
+
+  const actions = [
+    { label: '결제완료', status: 'PAID', className: 'bg-green-50 text-green-700' },
+    { label: '대기처리', status: 'READY', className: 'bg-gray-100 text-gray-700' },
+    { label: '취소승인', status: 'CANCELED', className: 'bg-red-50 text-red-600' },
+    { label: '반품승인', status: 'RETURNED', className: 'bg-orange-50 text-orange-600' },
+  ].filter((action) => action.status !== status);
+
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      {actions.map((action) => (
+        <button
+          key={action.status}
+          onClick={() => updateStatus(action.status)}
+          className={`rounded-2xl py-3 text-xs font-black ${action.className}`}
+        >
+          {action.label}
+        </button>
+      ))}
+    </div>
+  );
+}

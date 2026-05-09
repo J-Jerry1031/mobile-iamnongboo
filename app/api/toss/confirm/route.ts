@@ -20,7 +20,18 @@ export async function POST(req: Request) {
   const data = await response.json();
 
   if (response.ok) {
-    await prisma.order.updateMany({ where: { tossOrderId: orderId }, data: { status: 'PAID', paymentKey } });
+    const order = await prisma.order.findUnique({ where: { tossOrderId: orderId }, include: { items: true } });
+    if (order && order.status !== 'PAID') {
+      await prisma.$transaction(async (tx) => {
+        for (const item of order.items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { decrement: item.quantity } },
+          });
+        }
+        await tx.order.update({ where: { id: order.id }, data: { status: 'PAID', paymentKey } });
+      });
+    }
   }
 
   return NextResponse.json(data, { status: response.status });

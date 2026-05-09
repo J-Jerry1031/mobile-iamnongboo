@@ -29,7 +29,7 @@ const trustItems = [
 
 export default async function HomePage() {
   const products = await prisma.product.findMany({
-    where: { isActive: true },
+    where: { isActive: true, stock: { gt: 0 } },
     take: 8,
     orderBy: { createdAt: 'desc' },
   });

@@ -52,7 +52,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
         {[
           { label: '산지직송', icon: Truck },
           { label: '신선보장', icon: BadgeCheck },
-          { label: product.stock > 0 ? `재고 ${product.stock}` : '품절임박', icon: PackageCheck },
+          { label: product.stock > 0 && product.isActive ? `재고 ${product.stock}` : '품절', icon: PackageCheck },
         ].map(({ label, icon: Icon }) => (
           <div key={label} className="rounded-2xl bg-white p-3 text-center text-[11px] font-black text-[#214b36]">
             <Icon className="mx-auto mb-1 text-[#668f6b]" size={18} />
@@ -79,7 +79,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
             ['카테고리', product.category],
             ['원산지', '국내 산지'],
             ['보관방법', product.category === '수산물' ? '냉동/냉장 보관' : '냉장 보관 권장'],
-            ['출고상태', product.stock > 0 ? '주문 가능' : '품절 임박'],
+            ['출고상태', product.stock > 0 && product.isActive ? '주문 가능' : '품절'],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl bg-[#fcfbf6] p-4">
               <p className="text-xs font-bold text-[#7a6b4d]">{label}</p>
@@ -131,7 +131,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
       <section id="review-info" className="mt-8 px-5 scroll-mt-28">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-black">상품 후기</h2>
-          <Link href={`/reviews?productId=${product.id}`} className="rounded-full bg-white px-3 py-2 text-xs font-black text-[#214b36]">후기쓰기</Link>
+          <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-[#7a6b4d]">구매 후 작성</span>
         </div>
         <div className="mt-4 space-y-3">
           {product.reviews.map((r) => <div key={r.id} className="rounded-3xl bg-white p-4 text-sm"><p>{'⭐'.repeat(r.rating)}</p><p className="mt-2">{r.content}</p></div>)}
@@ -148,7 +148,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
         </p>
       </section>
 
-      <AddToCartButton sticky product={{ id: product.id, name: product.name, price: product.price, image: product.image }} />
+      <AddToCartButton sticky product={{ id: product.id, name: product.name, price: product.price, image: product.image, stock: product.stock, isActive: product.isActive }} />
     </div>
   );
 }

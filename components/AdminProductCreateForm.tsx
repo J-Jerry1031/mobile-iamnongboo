@@ -71,10 +71,19 @@ export function AdminProductCreateForm() {
       {open && (
         <form action={submit} className="mt-4 space-y-3">
           <input name="name" placeholder="상품명" className="w-full rounded-2xl bg-[#fffaf0] p-4" />
-          <input name="category" placeholder="카테고리" className="w-full rounded-2xl bg-[#fffaf0] p-4" />
+          <select name="category" className="w-full rounded-2xl bg-[#fffaf0] p-4">
+            {['유기농', '과일', '채소', '수산물', '간식', '유제품', '음료', '반찬', '생활용품'].map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
           <input name="price" type="number" placeholder="판매가" className="w-full rounded-2xl bg-[#fffaf0] p-4" />
           <input name="stock" type="number" placeholder="재고" className="w-full rounded-2xl bg-[#fffaf0] p-4" />
           <input name="badge" placeholder="뱃지 예: 산지직송" className="w-full rounded-2xl bg-[#fffaf0] p-4" />
+          <input name="sortOrder" type="number" placeholder="정렬 순서" className="w-full rounded-2xl bg-[#fffaf0] p-4" />
+          <label className="flex items-center gap-2 rounded-2xl bg-[#fffaf0] p-4 text-sm font-black text-[#214b36]">
+            <input name="isFarmerPick" type="checkbox" value="true" className="h-4 w-4 accent-[#214b36]" />
+            추천상품으로 표시
+          </label>
 
           <div className="rounded-2xl bg-[#fffaf0] p-4">
             <p className="mb-2 text-sm font-black text-[#214b36]">상품 사진 업로드</p>

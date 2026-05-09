@@ -9,13 +9,15 @@ export function AddToCartButton({
   product,
   sticky = false,
 }: {
-  product: { id: string; name: string; price: number; image: string };
+  product: { id: string; name: string; price: number; image: string; stock?: number; isActive?: boolean };
   sticky?: boolean;
 }) {
   const add = useCart((s) => s.add);
   const router = useRouter();
   const [qty, setQty] = useState(1);
   const [done, setDone] = useState(false);
+  const available = product.isActive !== false && (product.stock ?? 1) > 0;
+  const maxQty = Math.max(1, product.stock ?? 99);
 
   return (
     <div
@@ -38,28 +40,35 @@ export function AddToCartButton({
           )}
         </div>
       )}
+      {!available && (
+        <p className="mb-3 rounded-2xl bg-red-50 p-3 text-center text-sm font-black text-red-600">
+          현재 품절되어 주문할 수 없어요
+        </p>
+      )}
       <div className="mb-3 flex items-center justify-between rounded-2xl bg-white p-3 ring-1 ring-[#eadfce]">
         <span className="text-sm font-black text-[#214b36]">수량</span>
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="h-9 w-9 rounded-full bg-[#f1ead9] font-black">-</button>
           <span className="w-8 text-center font-black">{qty}</span>
-          <button type="button" onClick={() => setQty(qty + 1)} className="h-9 w-9 rounded-full bg-[#f1ead9] font-black">+</button>
+          <button type="button" onClick={() => setQty(Math.min(maxQty, qty + 1))} className="h-9 w-9 rounded-full bg-[#f1ead9] font-black">+</button>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={() => { add(product, qty); setDone(true); window.setTimeout(() => setDone(false), 1400); }}
-          className="rounded-2xl bg-[#f1ead9] px-5 py-4 text-sm font-black text-[#214b36] active:scale-[.99]"
+          disabled={!available}
+          className="rounded-2xl bg-[#f1ead9] px-5 py-4 text-sm font-black text-[#214b36] active:scale-[.99] disabled:opacity-45"
         >
-          {done ? '담겼어요 ✓' : '장바구니'}
+          {!available ? '품절' : done ? '담겼어요 ✓' : '장바구니'}
         </button>
         <button
           type="button"
           onClick={() => { add(product, qty); router.push('/cart'); }}
-          className="rounded-2xl bg-[#214b36] px-5 py-4 text-sm font-black text-white active:scale-[.99]"
+          disabled={!available}
+          className="rounded-2xl bg-[#214b36] px-5 py-4 text-sm font-black text-white active:scale-[.99] disabled:opacity-45"
         >
-          바로구매
+          {!available ? '주문불가' : '바로구매'}
         </button>
       </div>
     </div>
