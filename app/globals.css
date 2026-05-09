@@ -29,15 +29,23 @@ a { -webkit-tap-highlight-color: transparent; }
   color: #080808;
   font-weight: 950;
   letter-spacing: 0;
-  line-height: .76;
+  line-height: .72;
 }
 
 .iam-farmer-logo span {
-  font-size: 26px;
+  font-size: 24px;
 }
 
 .iam-farmer-logo strong {
-  font-size: 20px;
+  font-size: 18px;
+}
+
+.header-icon-button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: #1f2a24;
 }
 
 .story-page {
