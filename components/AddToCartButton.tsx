@@ -1,18 +1,44 @@
 'use client';
 
 import { useCart } from '@/lib/cart-store';
+import { won } from '@/lib/format';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-export function AddToCartButton({ product }: { product: { id: string; name: string; price: number; image: string } }) {
+export function AddToCartButton({
+  product,
+  sticky = false,
+}: {
+  product: { id: string; name: string; price: number; image: string };
+  sticky?: boolean;
+}) {
   const add = useCart((s) => s.add);
   const router = useRouter();
   const [qty, setQty] = useState(1);
   const [done, setDone] = useState(false);
 
   return (
-    <div className="mt-4">
-      <div className="mb-3 flex items-center justify-between rounded-2xl bg-white p-3">
+    <div
+      className={
+        sticky
+          ? 'fixed left-1/2 z-[35] w-full max-w-[430px] -translate-x-1/2 border-t border-[#eadfce] bg-white/95 px-5 py-3 shadow-[0_-12px_28px_rgba(31,42,36,.1)] backdrop-blur bottom-[calc(73px+env(safe-area-inset-bottom))]'
+          : 'mt-4'
+      }
+    >
+      {sticky && (
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <p className="line-clamp-1 text-sm font-black text-[#1f2a24]">{product.name}</p>
+            <p className="mt-1 text-base font-black text-[#214b36]">{won(product.price * qty)}</p>
+          </div>
+          {done && (
+            <span className="rounded-full bg-[#e5f0dc] px-3 py-1 text-[11px] font-black text-[#214b36]">
+              담겼어요
+            </span>
+          )}
+        </div>
+      )}
+      <div className="mb-3 flex items-center justify-between rounded-2xl bg-white p-3 ring-1 ring-[#eadfce]">
         <span className="text-sm font-black text-[#214b36]">수량</span>
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="h-9 w-9 rounded-full bg-[#f1ead9] font-black">-</button>
@@ -23,7 +49,7 @@ export function AddToCartButton({ product }: { product: { id: string; name: stri
       <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
-          onClick={() => { add(product, qty); setDone(true); }}
+          onClick={() => { add(product, qty); setDone(true); window.setTimeout(() => setDone(false), 1400); }}
           className="rounded-2xl bg-[#f1ead9] px-5 py-4 text-sm font-black text-[#214b36] active:scale-[.99]"
         >
           {done ? '담겼어요 ✓' : '장바구니'}
