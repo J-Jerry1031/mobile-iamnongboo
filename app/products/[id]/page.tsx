@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 import { won } from '@/lib/format';
 import { AddToCartButton } from '@/components/AddToCartButton';
@@ -20,6 +21,28 @@ import {
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const product = await prisma.product.findUnique({ where: { id } });
+  if (!product) return { title: '상품을 찾을 수 없어요 | 아이엠농부' };
+
+  return {
+    title: `${product.name} | 아이엠농부`,
+    description: product.description,
+    openGraph: {
+      title: `${product.name} | 아이엠농부`,
+      description: product.description,
+      images: [{ url: product.image, width: 1200, height: 630, alt: product.name }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${product.name} | 아이엠농부`,
+      description: product.description,
+      images: [product.image],
+    },
+  };
+}
 
 export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

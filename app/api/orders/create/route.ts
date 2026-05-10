@@ -21,7 +21,13 @@ export async function POST(req: Request) {
 
   if (!items?.length) return NextResponse.json({ message: '장바구니가 비어 있어요.' }, { status: 400 });
   if (!buyerName || !buyerPhone) return NextResponse.json({ message: '주문자 정보가 부족해요.' }, { status: 400 });
+  if (!/^01\d{8,9}$/.test(String(buyerPhone))) return NextResponse.json({ message: '연락처를 정확히 입력해주세요.' }, { status: 400 });
+  if (!['pickup', 'delivery'].includes(String(deliveryMethod))) return NextResponse.json({ message: '수령 방법을 선택해주세요.' }, { status: 400 });
   if (deliveryMethod === 'delivery' && !address) return NextResponse.json({ message: '배송지를 입력해주세요.' }, { status: 400 });
+  if (!tossOrderId) return NextResponse.json({ message: '결제 주문번호가 필요해요.' }, { status: 400 });
+
+  const existing = await prisma.order.findUnique({ where: { tossOrderId } });
+  if (existing) return NextResponse.json(existing);
 
   const productIds = items.map((item) => item.id);
   const products = await prisma.product.findMany({
