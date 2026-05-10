@@ -30,6 +30,8 @@ function mask(value?: string) {
 export default async function AdminSystemPage() {
   const admin = await requireAdmin();
   if (!admin) redirect('/login?next=/admin/system&reason=protected');
+  const missingRequired = checks.filter((item) => ['AUTH_SECRET', 'DATABASE_URL', 'DIRECT_URL', 'TOSS_SECRET_KEY', 'NEXT_PUBLIC_TOSS_CLIENT_KEY', 'NEXT_PUBLIC_BASE_URL'].includes(item.key) && !process.env[item.key]);
+  const missingOptional = checks.filter((item) => !['AUTH_SECRET', 'DATABASE_URL', 'DIRECT_URL', 'TOSS_SECRET_KEY', 'NEXT_PUBLIC_TOSS_CLIENT_KEY', 'NEXT_PUBLIC_BASE_URL'].includes(item.key) && !process.env[item.key]);
 
   return (
     <div className="px-5 pt-5">
@@ -38,6 +40,17 @@ export default async function AdminSystemPage() {
         <h1 className="mt-2 text-2xl font-black">오픈 체크리스트</h1>
         <p className="mt-2 text-[13px] text-white/75">배포 환경변수와 보안 기본값을 확인해요.</p>
       </div>
+
+      <section className={`mt-4 rounded-3xl p-5 ${missingRequired.length ? 'bg-red-50 text-red-700' : 'bg-[#e5f0dc] text-[#214b36]'}`}>
+        <p className="font-black">{missingRequired.length ? '필수 설정이 남아 있어요' : '필수 설정이 준비됐어요'}</p>
+        <p className="mt-2 text-sm font-bold leading-6">
+          {missingRequired.length
+            ? missingRequired.map((item) => item.key).join(', ')
+            : missingOptional.length
+              ? `선택 설정 ${missingOptional.length}개를 더 채우면 고객 신뢰 정보가 완성됩니다.`
+              : '필수/선택 설정이 모두 채워졌습니다.'}
+        </p>
+      </section>
 
       <div className="mt-5 space-y-3">
         {checks.map((item) => {

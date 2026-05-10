@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { MobileHeader } from '@/components/MobileHeader';
 import { BottomNav } from '@/components/BottomNav';
+import { MobileFooter } from '@/components/MobileFooter';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
@@ -29,7 +30,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <div className="mobile-shell">
           <MobileHeader />
-          <main className="pb-24">{children}</main>
+          <main className="pb-24">
+            {children}
+            <MobileFooter />
+          </main>
           <BottomNav />
         </div>
       </body>

@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { won } from '@/lib/format';
 
 type AdminProduct = {
@@ -22,7 +22,12 @@ const categories = ['유기농', '과일', '채소', '수산물', '간식', '유
 
 export function AdminProductEditForm({ product }: { product: AdminProduct }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('edit') === product.id) setOpen(true);
+  }, [product.id, searchParams]);
 
   async function submit(formData: FormData) {
     const payload = Object.fromEntries(formData);

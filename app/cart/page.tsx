@@ -114,7 +114,7 @@ export default function CartPage() {
         <Link href={items.length ? '/checkout' : '/products/market'} className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-[#214b36] py-4 text-center font-black text-white">
           <PackageCheck size={19} /> {items.length ? '주문하기' : '상품 담으러 가기'}
         </Link>
-        </div>
+      </div>
 
       {items.length > 0 && (
         <div className="fixed bottom-[calc(73px+env(safe-area-inset-bottom))] left-1/2 z-[35] w-full max-w-[430px] -translate-x-1/2 border-t border-[#eadfce] bg-white/95 px-5 py-3 shadow-[0_-12px_28px_rgba(31,42,36,.1)] backdrop-blur">

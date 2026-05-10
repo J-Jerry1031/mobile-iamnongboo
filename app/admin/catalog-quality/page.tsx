@@ -46,7 +46,7 @@ export default async function AdminCatalogQualityPage() {
 
       <div className="mt-5 space-y-3">
         {issues.map(({ product, issues: productIssues }) => (
-          <Link key={product.id} href="/admin/products" className="flex gap-3 rounded-3xl bg-white p-4 shadow-sm active:scale-[.99]">
+          <Link key={product.id} href={`/admin/products?edit=${product.id}`} className="flex gap-3 rounded-3xl bg-white p-4 shadow-sm active:scale-[.99]">
             {product.image ? (
               <img src={product.image} alt={product.name} className="h-16 w-16 rounded-2xl object-cover" />
             ) : (
