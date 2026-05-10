@@ -3,6 +3,7 @@ export default function BusinessPage() {
     ['상호', process.env.NEXT_PUBLIC_BUSINESS_NAME || '아이엠농부'],
     ['대표자', process.env.NEXT_PUBLIC_BUSINESS_OWNER],
     ['사업자등록번호', process.env.NEXT_PUBLIC_BUSINESS_REGISTRATION_NO],
+    ['통신판매업 신고번호', process.env.NEXT_PUBLIC_MAIL_ORDER_SALES_REGISTRATION_NO],
     ['주소', process.env.NEXT_PUBLIC_BUSINESS_ADDRESS],
     ['고객센터', process.env.NEXT_PUBLIC_BUSINESS_PHONE],
   ] as const;

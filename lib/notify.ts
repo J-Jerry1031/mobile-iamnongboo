@@ -14,9 +14,25 @@ export async function notifyAdmin({ title, body, url }: NotifyPayload) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text: `${title}\n${body}${url ? `\n${url}` : ''}`,
-        title,
-        body,
-        url,
+        blocks: [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `*${title}*\n${body}`,
+            },
+          },
+          ...(url
+            ? [{
+                type: 'actions',
+                elements: [{
+                  type: 'button',
+                  text: { type: 'plain_text', text: '관리자에서 보기' },
+                  url,
+                }],
+              }]
+            : []),
+        ],
       }),
     });
   } catch (error) {
