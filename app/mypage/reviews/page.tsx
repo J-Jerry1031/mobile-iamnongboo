@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function MyReviewsPage() {
   const user = await getCurrentUser();
-  if (!user) redirect('/login');
+  if (!user) redirect('/login?next=/mypage/reviews&reason=protected');
 
   const reviews = await prisma.review.findMany({
     where: { userId: user.id },

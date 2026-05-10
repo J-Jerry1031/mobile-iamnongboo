@@ -10,6 +10,7 @@ import {
   Clock3,
   Leaf,
   PackageCheck,
+  Refrigerator,
   RotateCcw,
   ShieldCheck,
   Snowflake,
@@ -29,6 +30,14 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   : 0;
 
   const deliveryFee = product.price >= 30000 ? 0 : 3000;
+  const producerNote = product.category === '수산물'
+    ? '입고일 기준 선도와 냉장/냉동 상태를 확인한 상품만 판매합니다.'
+    : '국내 산지와 협력해 당일 상태가 좋은 상품을 우선 선별합니다.';
+  const storageNote = product.category === '수산물'
+    ? '수령 즉시 냉장 또는 냉동 보관하고, 해동 후 재냉동은 피해주세요.'
+    : product.category === '과일'
+      ? '직사광선을 피하고, 상품 상태에 따라 냉장 보관하면 더 오래 즐길 수 있어요.'
+      : '수령 후 밀봉해 냉장 보관하고 가능한 빠르게 드시는 것을 권장합니다.';
 
   return (
     <div className="pb-44">
@@ -92,6 +101,29 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
         </div>
       </section>
 
+      <section className="mx-5 mt-4 rounded-3xl bg-white p-5 shadow-sm">
+        <h2 className="flex items-center gap-2 text-lg font-black text-[#1f2a24]">
+          <ShieldCheck size={20} className="text-[#668f6b]" /> 믿고 구매하는 기준
+        </h2>
+        <div className="mt-4 grid gap-3">
+          {[
+            { title: '산지/입고 확인', body: producerNote, icon: Leaf },
+            { title: '보관 방법', body: storageNote, icon: Refrigerator },
+            { title: '문제 상품 보상', body: '상품 이상은 수령 당일 사진과 주문번호를 남겨주시면 확인 후 교환 또는 환불로 도와드려요.', icon: RotateCcw },
+          ].map(({ title, body, icon: Icon }) => (
+            <div key={title} className="flex gap-3 rounded-2xl bg-[#fcfbf6] p-4">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#e5f0dc] text-[#214b36]">
+                <Icon size={19} />
+              </span>
+              <span>
+                <span className="block font-black text-[#1f2a24]">{title}</span>
+                <span className="mt-1 block text-sm leading-6 text-[#5b5141]">{body}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section id="delivery-info" className="mx-5 mt-4 rounded-3xl bg-[#fcfbf6] p-5 ring-1 ring-[#eadfce] scroll-mt-28">
         <h2 className="text-lg font-black text-[#1f2a24]">배송 · 보관 안내</h2>
         <div className="mt-4 space-y-3 text-sm text-[#5b5141]">
@@ -125,6 +157,22 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
         <div className="mt-4 space-y-3 text-sm leading-6 text-[#5b5141]">
           <p>신선식품 특성상 단순 변심 반품은 어렵지만, 상품 이상은 확인 후 교환 또는 환불로 책임집니다.</p>
           <p>수령 당일 상품 사진과 주문번호를 함께 남겨주시면 가장 빠르게 도와드릴 수 있어요.</p>
+        </div>
+      </section>
+
+      <section className="mx-5 mt-4 rounded-3xl bg-[#fcfbf6] p-5 ring-1 ring-[#eadfce]">
+        <h2 className="text-lg font-black text-[#1f2a24]">자주 묻는 질문</h2>
+        <div className="mt-4 space-y-3 text-sm">
+          {[
+            ['언제 받을 수 있나요?', '상품과 입고 상태에 따라 다르지만, 주문 확인 후 가능한 빠르게 픽업/배송 준비를 진행합니다.'],
+            ['상품 상태가 좋지 않으면 어떻게 하나요?', '수령 당일 사진과 함께 문의해주시면 상태 확인 후 교환 또는 환불로 책임집니다.'],
+            ['품절이면 다시 입고되나요?', '산지 상황에 따라 재입고 일정이 달라질 수 있어요. 문의를 남겨주시면 확인해드릴게요.'],
+          ].map(([question, answer]) => (
+            <div key={question} className="rounded-2xl bg-white p-4">
+              <p className="font-black text-[#214b36]">Q. {question}</p>
+              <p className="mt-2 leading-6 text-[#5b5141]">A. {answer}</p>
+            </div>
+          ))}
         </div>
       </section>
 

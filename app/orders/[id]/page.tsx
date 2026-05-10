@@ -29,9 +29,8 @@ const statusLabel = {
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
-  if (!user) redirect('/login');
-
   const { id } = await params;
+  if (!user) redirect(`/login?next=${encodeURIComponent(`/orders/${id}`)}&reason=protected`);
   const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
   if (!order) notFound();
   if (user.role !== 'ADMIN' && order.userId !== user.id) redirect('/orders');

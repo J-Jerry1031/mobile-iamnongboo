@@ -16,7 +16,7 @@ async function createReview(formData: FormData) {
 
   const user = await getCurrentUser();
 
-  if (!user) redirect('/login');
+  if (!user) redirect('/login?next=/orders&reason=protected');
   if (!productId) redirect('/orders');
   if (!content) redirect(`/reviews?productId=${productId}${orderId ? `&orderId=${orderId}` : ''}`);
 
@@ -91,7 +91,8 @@ export default async function ReviewsPage({
   const params = await searchParams;
   const user = await getCurrentUser();
 
-  if (!user) redirect('/login');
+  const currentReviewPath = `/reviews${params.productId ? `?productId=${params.productId}${params.orderId ? `&orderId=${params.orderId}` : ''}` : ''}`;
+  if (!user) redirect(`/login?next=${encodeURIComponent(currentReviewPath)}&reason=protected`);
 
   const product = params.productId
     ? await prisma.product.findUnique({ where: { id: params.productId } })

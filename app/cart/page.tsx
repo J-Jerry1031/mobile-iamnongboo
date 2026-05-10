@@ -94,19 +94,27 @@ export default function CartPage() {
       )}
 
       <div className="mt-6 rounded-3xl bg-white p-5 shadow-sm">
-        <div className="space-y-3 text-sm font-bold text-[#5b5141]">
-          <div className="flex justify-between"><span>상품금액</span><span>{won(subtotal)}</span></div>
-          <div className="flex justify-between"><span>배송비</span><span>{deliveryFee ? won(deliveryFee) : '무료'}</span></div>
-          <div className="flex items-center gap-2 rounded-2xl bg-[#fcfbf6] p-3 text-[12px] text-[#668f6b]">
-            <Truck size={16} />
-            {subtotal >= 30000 ? '무료배송이 적용됐어요.' : `무료배송까지 ${won(Math.max(0, 30000 - subtotal))} 남았어요.`}
-          </div>
-        </div>
-        <div className="mt-5 flex justify-between border-t border-[#eadfce] pt-5 text-lg font-black text-[#1f2a24]"><span>총 결제금액</span><span>{won(total)}</span></div>
+        {items.length > 0 ? (
+          <>
+            <div className="space-y-3 text-sm font-bold text-[#5b5141]">
+              <div className="flex justify-between"><span>상품금액</span><span>{won(subtotal)}</span></div>
+              <div className="flex justify-between"><span>배송비</span><span>{deliveryFee ? won(deliveryFee) : '무료'}</span></div>
+              <div className="flex items-center gap-2 rounded-2xl bg-[#fcfbf6] p-3 text-[12px] text-[#668f6b]">
+                <Truck size={16} />
+                {subtotal >= 30000 ? '무료배송이 적용됐어요.' : `무료배송까지 ${won(Math.max(0, 30000 - subtotal))} 남았어요.`}
+              </div>
+            </div>
+            <div className="mt-5 flex justify-between border-t border-[#eadfce] pt-5 text-lg font-black text-[#1f2a24]"><span>총 결제금액</span><span>{won(total)}</span></div>
+          </>
+        ) : (
+          <p className="text-center text-sm font-bold leading-6 text-[#7a6b4d]">
+            마음에 드는 상품을 담으면 결제금액과 배송비가 여기에 표시돼요.
+          </p>
+        )}
         <Link href={items.length ? '/checkout' : '/products/market'} className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-[#214b36] py-4 text-center font-black text-white">
           <PackageCheck size={19} /> {items.length ? '주문하기' : '상품 담으러 가기'}
         </Link>
-      </div>
+        </div>
 
       {items.length > 0 && (
         <div className="fixed bottom-[calc(73px+env(safe-area-inset-bottom))] left-1/2 z-[35] w-full max-w-[430px] -translate-x-1/2 border-t border-[#eadfce] bg-white/95 px-5 py-3 shadow-[0_-12px_28px_rgba(31,42,36,.1)] backdrop-blur">

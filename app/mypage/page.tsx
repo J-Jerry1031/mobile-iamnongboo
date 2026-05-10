@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function MyPage() {
   const user = await getCurrentUser();
-  if (!user) redirect('/login');
+  if (!user) redirect('/login?next=/mypage&reason=protected');
 
   const [orderCount, reviewCount, inquiryCount, recentOrders, writtenReviews] = await Promise.all([
     prisma.order.count({ where: user.role === 'ADMIN' ? {} : { userId: user.id } }),

@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function OrdersPage() {
   const user = await getCurrentUser();
-  if (!user) redirect('/login');
+  if (!user) redirect('/login?next=/orders&reason=protected');
   const orders = await prisma.order.findMany({ where: user.role === 'ADMIN' ? {} : { userId: user.id }, orderBy: { createdAt: 'desc' }, include: { items: true } });
   const productIds = [...new Set(orders.flatMap((order) => order.items.map((item) => item.productId)))];
   const products = await prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, image: true } });

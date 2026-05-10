@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminInquiriesPage() {
   const admin = await requireAdmin();
-  if (!admin) redirect('/login');
+  if (!admin) redirect('/login?next=/admin/inquiries&reason=protected');
 
   const inquiries = await prisma.inquiry.findMany({ orderBy: { createdAt: 'desc' }, include: { user: true } });
   const openCount = inquiries.filter((inquiry) => inquiry.status === 'OPEN').length;

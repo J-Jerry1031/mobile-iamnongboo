@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { won } from '@/lib/format';
 import { ProductImage } from '@/components/ProductImage';
-import { ArrowDownUp, BadgeCheck, Search, SlidersHorizontal, Truck } from 'lucide-react';
+import { BadgeCheck, Search, SlidersHorizontal, Truck, X } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,11 +21,12 @@ const categories = [
 export default async function ProductList({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; sort?: string }>;
+  searchParams: Promise<{ category?: string; sort?: string; q?: string }>;
 }) {
   const params = await searchParams;
   const category = params.category || '';
   const sort = params.sort || 'new';
+  const q = (params.q || '').trim();
   const orderBy =
     sort === 'price-low'
       ? { price: 'asc' as const }
@@ -37,15 +38,27 @@ export default async function ProductList({
     where: {
       isActive: true,
       ...(category ? { category } : {}),
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q, mode: 'insensitive' as const } },
+              { category: { contains: q, mode: 'insensitive' as const } },
+              { description: { contains: q, mode: 'insensitive' as const } },
+              { badge: { contains: q, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
     },
     orderBy,
   });
 
-  const buildHref = (next: { category?: string; sort?: string }) => {
+  const buildHref = (next: { category?: string; sort?: string; q?: string }) => {
     const nextCategory = next.category ?? category;
     const nextSort = next.sort ?? sort;
+    const nextQ = next.q ?? q;
     const query = new URLSearchParams();
     if (nextCategory) query.set('category', nextCategory);
+    if (nextQ) query.set('q', nextQ);
     if (nextSort && nextSort !== 'new') query.set('sort', nextSort);
     const qs = query.toString();
     return qs ? `/products/market?${qs}` : '/products/market';
@@ -56,20 +69,40 @@ export default async function ProductList({
       <div className="rounded-[24px] bg-[#214b36] p-5 text-white">
         <p className="text-[12px] font-bold text-[#f5d87a]">MARKET</p>
         <h1 className="mt-2 text-2xl font-black">
-          {category ? `${category} 상품` : '오늘의 상품'}
+          {q ? `"${q}" 검색결과` : category ? `${category} 상품` : '오늘의 상품'}
         </h1>
         <p className="mt-2 text-[13px] leading-5 text-white/75">
           산지에서 들어온 상품을 신선도와 판매 상태 기준으로 보여드려요.
         </p>
       </div>
 
-      <Link
-        href="/products/market"
-        className="mt-4 flex h-12 items-center gap-3 rounded-[18px] bg-white px-4 text-[13px] font-bold text-[#7a6b4d]"
-      >
-        <Search size={18} />
-        상품명, 카테고리로 찾기
-      </Link>
+      <form action="/products/market" className="mt-4 flex h-12 items-center gap-3 rounded-[18px] bg-white px-4 text-[13px] font-bold text-[#7a6b4d]">
+        <Search size={18} className="shrink-0" />
+        {category && <input type="hidden" name="category" value={category} />}
+        {sort !== 'new' && <input type="hidden" name="sort" value={sort} />}
+        <input
+          name="q"
+          defaultValue={q}
+          placeholder="상품명, 카테고리, 설명으로 찾기"
+          className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[#9b8d73]"
+        />
+        {q && (
+          <Link href={buildHref({ q: '' })} aria-label="검색어 지우기" className="grid h-8 w-8 place-items-center rounded-full bg-[#f1ead9] text-[#214b36]">
+            <X size={15} />
+          </Link>
+        )}
+        <button className="rounded-full bg-[#214b36] px-3 py-2 text-xs font-black text-white">검색</button>
+      </form>
+
+      {!q && (
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          {['사과', '유기농', '반찬', '주스'].map((keyword) => (
+            <Link key={keyword} href={buildHref({ q: keyword })} className="shrink-0 rounded-full bg-[#fcfbf6] px-3 py-2 text-xs font-black text-[#214b36] ring-1 ring-[#eadfce]">
+              {keyword}
+            </Link>
+          ))}
+        </div>
+      )}
 
       <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
         {categories.map((cat) => {
@@ -157,9 +190,14 @@ export default async function ProductList({
       </div>
 
       {!products.length && (
-        <p className="mt-8 rounded-3xl bg-white p-5 text-sm text-[#7a6b4d]">
-          이 카테고리에 등록된 상품이 아직 없어요.
-        </p>
+        <div className="mt-8 rounded-3xl bg-white p-6 text-center text-sm text-[#7a6b4d]">
+          <Search className="mx-auto text-[#668f6b]" size={36} />
+          <p className="mt-4 font-black text-[#1f2a24]">조건에 맞는 상품이 없어요.</p>
+          <p className="mt-2 leading-6">검색어를 줄이거나 다른 카테고리를 확인해보세요.</p>
+          <Link href="/products/market" className="mt-5 inline-flex rounded-full bg-[#214b36] px-5 py-3 font-black text-white">
+            전체 상품 보기
+          </Link>
+        </div>
       )}
     </div>
   );

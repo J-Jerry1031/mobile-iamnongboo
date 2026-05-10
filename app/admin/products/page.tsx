@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminProductsPage() {
   const admin = await requireAdmin();
-  if (!admin) redirect('/login');
+  if (!admin) redirect('/login?next=/admin/products&reason=protected');
 
   const products = await prisma.product.findMany({ orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }] });
   const soldOutCount = products.filter((product) => product.stock <= 0).length;

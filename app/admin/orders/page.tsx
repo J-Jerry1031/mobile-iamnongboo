@@ -17,7 +17,7 @@ const statusLabel = {
 
 export default async function AdminOrdersPage() {
   const admin = await requireAdmin();
-  if (!admin) redirect('/login');
+  if (!admin) redirect('/login?next=/admin/orders&reason=protected');
 
   const orders = await prisma.order.findMany({ orderBy: { createdAt: 'desc' }, include: { items: true, user: true } });
   const todayCount = orders.filter((order) => order.createdAt.toDateString() === new Date().toDateString()).length;
