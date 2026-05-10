@@ -13,6 +13,12 @@ const checks = [
   { key: 'NEXT_PUBLIC_BASE_URL', label: '서비스 Base URL', secret: false },
   { key: 'NEXT_PUBLIC_SUPABASE_URL', label: 'Supabase URL', secret: false },
   { key: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', label: 'Supabase anon key', secret: false },
+  { key: 'ADMIN_NOTIFY_WEBHOOK_URL', label: '관리자 알림 Webhook', secret: true },
+  { key: 'NEXT_PUBLIC_BUSINESS_NAME', label: '사업자 상호', secret: false },
+  { key: 'NEXT_PUBLIC_BUSINESS_OWNER', label: '대표자명', secret: false },
+  { key: 'NEXT_PUBLIC_BUSINESS_REGISTRATION_NO', label: '사업자등록번호', secret: false },
+  { key: 'NEXT_PUBLIC_BUSINESS_ADDRESS', label: '사업장 주소', secret: false },
+  { key: 'NEXT_PUBLIC_BUSINESS_PHONE', label: '고객센터 연락처', secret: false },
 ];
 
 function mask(value?: string) {
@@ -60,6 +66,7 @@ export default async function AdminSystemPage() {
           <p>브라우저에는 `NEXT_PUBLIC_*` 값만 노출됩니다. `DATABASE_URL`, `DIRECT_URL`, `TOSS_SECRET_KEY`, `AUTH_SECRET`은 서버 환경변수에만 두세요.</p>
           <p>Supabase 테이블은 RLS를 켜고, 관리자 쓰기는 지금처럼 서버 API에서 권한 체크를 거치는 구조를 유지하는 것이 좋습니다.</p>
           <p>Vercel Production, Preview, Local 환경변수 값이 서로 맞는지 오픈 전 한 번 더 확인해주세요.</p>
+          <p>`ADMIN_NOTIFY_WEBHOOK_URL`을 설정하면 새 주문과 새 문의가 들어올 때 관리자 알림을 받을 수 있습니다.</p>
         </div>
       </section>
     </div>

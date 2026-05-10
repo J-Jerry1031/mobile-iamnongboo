@@ -61,6 +61,12 @@ export default async function MyPage() {
       icon: MessageCircle,
     },
     {
+      title: '고객 안내',
+      description: '약관, 개인정보처리방침, 교환/환불 안내를 확인해요',
+      href: '/policies',
+      icon: ShieldCheck,
+    },
+    {
       title: '찜한 상품',
       description: '관심 상품 기능을 준비 중이에요',
       href: '/products/market',

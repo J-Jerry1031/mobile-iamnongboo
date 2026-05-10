@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
+import { notifyAdmin } from '@/lib/notify';
 
 type IncomingCartItem = {
   id: string;
@@ -62,6 +63,11 @@ export async function POST(req: Request) {
       items: { create: orderItems.map(({ product, quantity }) => ({ productId: product.id, name: product.name, price: product.price, quantity })) },
     },
     include: { items: true },
+  });
+  await notifyAdmin({
+    title: '새 주문이 접수됐어요',
+    body: `${order.orderNo} · ${buyerName} · ${totalAmount.toLocaleString('ko-KR')}원`,
+    url: `${process.env.NEXT_PUBLIC_BASE_URL || ''}/admin/orders`,
   });
 
   return NextResponse.json(order);

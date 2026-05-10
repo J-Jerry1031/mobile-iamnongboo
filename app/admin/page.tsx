@@ -52,7 +52,9 @@ export default async function AdminPage() {
           ['주문관리', '/admin/orders'],
           ['회원관리', '/admin/members'],
           ['상품관리', '/admin/products'],
+          ['상품 품질 점검', '/admin/catalog-quality'],
           ['문의 답변', '/admin/inquiries'],
+          ['결제 리허설', '/admin/rehearsal'],
           ['작업 로그', '/admin/audit'],
           ['오픈 체크리스트', '/admin/system'],
         ].map(([label, href]) => (
