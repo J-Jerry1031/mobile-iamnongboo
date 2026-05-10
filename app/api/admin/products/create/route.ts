@@ -34,6 +34,15 @@ export async function POST(req: Request) {
       isActive: true,
     },
   });
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.id,
+      action: 'PRODUCT_CREATE',
+      targetType: 'PRODUCT',
+      targetId: product.id,
+      summary: `${product.name} 상품 등록`,
+    },
+  });
 
   return NextResponse.json(product);
 }

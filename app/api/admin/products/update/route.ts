@@ -36,6 +36,15 @@ export async function PATCH(req: Request) {
       sortOrder: Number(body.sortOrder || 0),
     },
   });
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.id,
+      action: 'PRODUCT_UPDATE',
+      targetType: 'PRODUCT',
+      targetId: product.id,
+      summary: `${product.name} 상품 정보 수정`,
+    },
+  });
 
   return NextResponse.json(product);
 }

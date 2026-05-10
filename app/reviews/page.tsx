@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth-lite';
+import { reviewableStatuses } from '@/lib/order-status';
 import Link from 'next/link';
 import { ChevronLeft, Gift, Star } from 'lucide-react';
 
@@ -24,7 +25,7 @@ async function createReview(formData: FormData) {
     where: {
       ...(orderId ? { id: orderId } : {}),
       userId: user.id,
-      status: { in: ['PAID', 'RETURN_REQUESTED', 'RETURNED'] },
+      status: { in: reviewableStatuses as any },
       items: { some: { productId } },
     },
   });
@@ -102,7 +103,7 @@ export default async function ReviewsPage({
     : null;
   if (params.productId && params.orderId) {
     const canWrite = order
-      && ['PAID', 'RETURN_REQUESTED', 'RETURNED'].includes(order.status)
+      && reviewableStatuses.includes(order.status)
       && order.items.some((item) => item.productId === params.productId);
     if (!canWrite) redirect(`/orders/${params.orderId}`);
   }

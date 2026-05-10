@@ -4,16 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { won } from '@/lib/format';
 import { AdminOrderButtons } from '@/components/AdminOrderButtons';
 import { Clock3, PackageCheck, Phone, UserRound } from 'lucide-react';
+import { orderStatusLabel } from '@/lib/order-status';
 export const dynamic = 'force-dynamic';
-
-const statusLabel = {
-  READY: '결제대기',
-  PAID: '결제완료',
-  CANCEL_REQUESTED: '취소요청',
-  CANCELED: '취소완료',
-  RETURN_REQUESTED: '반품요청',
-  RETURNED: '반품완료',
-} as const;
 
 export default async function AdminOrdersPage() {
   const admin = await requireAdmin();
@@ -56,7 +48,7 @@ export default async function AdminOrdersPage() {
                 </p>
               </div>
               <p className="h-fit rounded-full bg-[#e5f0dc] px-3 py-1 text-xs font-black text-[#214b36]">
-                {statusLabel[order.status]}
+                {orderStatusLabel[order.status]}
               </p>
             </div>
 

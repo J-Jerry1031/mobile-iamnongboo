@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { requireAdmin } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
-import { ChevronRight, MessageCircle, PackageCheck, ShoppingBag, UsersRound } from 'lucide-react';
+import { ChevronRight, ClipboardCheck, MessageCircle, PackageCheck, ShoppingBag, UsersRound } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
@@ -18,6 +18,7 @@ export default async function AdminPage() {
     prisma.product.count({ where: { stock: { lte: 0 } } }),
     prisma.user.count(),
   ]);
+  const auditCount = await prisma.adminAuditLog.count();
 
   const cards = [
     { label: '오늘 주문', value: todayOrders, href: '/admin/orders', icon: PackageCheck },
@@ -25,6 +26,7 @@ export default async function AdminPage() {
     { label: '답변대기 문의', value: openInquiries, href: '/admin/inquiries', icon: MessageCircle },
     { label: '품절 상품', value: soldOutProducts, href: '/admin/products', icon: ShoppingBag },
     { label: '회원', value: userCount, href: '/admin/members', icon: UsersRound },
+    { label: '작업 로그', value: auditCount, href: '/admin/audit', icon: ClipboardCheck },
   ];
 
   return (
@@ -51,6 +53,8 @@ export default async function AdminPage() {
           ['회원관리', '/admin/members'],
           ['상품관리', '/admin/products'],
           ['문의 답변', '/admin/inquiries'],
+          ['작업 로그', '/admin/audit'],
+          ['오픈 체크리스트', '/admin/system'],
         ].map(([label, href]) => (
           <Link key={href} href={href} className="flex items-center justify-between rounded-2xl bg-white p-4 font-black text-[#1f2a24]">
             {label}

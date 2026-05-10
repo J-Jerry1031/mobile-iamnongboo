@@ -16,6 +16,10 @@ enum Role {
 enum OrderStatus {
   READY
   PAID
+  PREPARING
+  READY_FOR_PICKUP
+  SHIPPING
+  COMPLETED
   CANCEL_REQUESTED
   CANCELED
   RETURN_REQUESTED
@@ -40,6 +44,7 @@ model User {
   reviews   Review[]
   inquiries Inquiry[]
   pointLogs PointLog[]
+  auditLogs AdminAuditLog[]
 }
 
 model Product {
@@ -117,4 +122,15 @@ model PointLog {
   refType   String?
   refId     String?
   createdAt DateTime @default(now())
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  adminId    String?
+  admin      User?    @relation(fields: [adminId], references: [id])
+  action     String
+  targetType String
+  targetId   String?
+  summary    String
+  createdAt  DateTime @default(now())
 }

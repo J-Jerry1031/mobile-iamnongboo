@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth-lite';
 import { LogoutButton } from '@/components/LogoutButton';
 import { prisma } from '@/lib/prisma';
+import { reviewableStatuses } from '@/lib/order-status';
 import {
   ChevronRight,
   ClipboardList,
@@ -35,7 +36,7 @@ export default async function MyPage() {
   ]);
   const reviewedProductIds = new Set(writtenReviews.map((review) => review.productId));
   const reviewTargets = recentOrders
-    .filter((order) => ['PAID', 'RETURN_REQUESTED', 'RETURNED'].includes(order.status))
+    .filter((order) => reviewableStatuses.includes(order.status))
     .flatMap((order) => order.items.map((item) => ({ ...item, orderId: order.id, orderNo: order.orderNo })))
     .filter((item) => !reviewedProductIds.has(item.productId))
     .slice(0, 2);

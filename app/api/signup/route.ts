@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { setAuthCookies } from '@/lib/auth-lite';
 
 export async function POST(req: Request) {
   const { name, email, phone, password } = await req.json();
@@ -38,12 +39,6 @@ export async function POST(req: Request) {
   });
 
   const res = NextResponse.json({ ok: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
-  res.cookies.set('imf_user_id', user.id, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 7,
-  });
+  setAuthCookies(res, user.id);
   return res;
 }

@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
+import { stockHeldStatuses } from '@/lib/order-status';
 
 export async function PATCH(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ message: '로그인이 필요해요.' }, { status: 401 });
 
   const { orderId, status } = await req.json();
-  const allowedStatuses = ['READY', 'PAID', 'CANCEL_REQUESTED', 'CANCELED', 'RETURN_REQUESTED', 'RETURNED'];
+  const allowedStatuses = ['READY', 'PAID', 'PREPARING', 'READY_FOR_PICKUP', 'SHIPPING', 'COMPLETED', 'CANCEL_REQUESTED', 'CANCELED', 'RETURN_REQUESTED', 'RETURNED'];
   if (!allowedStatuses.includes(status)) {
     return NextResponse.json({ message: '변경할 수 없는 주문 상태입니다.' }, { status: 400 });
   }
@@ -23,8 +24,8 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ message: '고객은 취소/반품 신청만 할 수 있어요.' }, { status: 403 });
   }
 
-  const shouldDeductStock = isAdmin && status === 'PAID' && order.status !== 'PAID';
-  const shouldRestoreStock = isAdmin && order.status === 'PAID' && ['CANCELED', 'RETURNED'].includes(status);
+  const shouldDeductStock = isAdmin && stockHeldStatuses.includes(status) && !stockHeldStatuses.includes(order.status);
+  const shouldRestoreStock = isAdmin && stockHeldStatuses.includes(order.status) && ['CANCELED', 'RETURNED'].includes(status);
 
   if (shouldDeductStock) {
     const products = await prisma.product.findMany({ where: { id: { in: order.items.map((item) => item.productId) } } });
@@ -54,7 +55,19 @@ export async function PATCH(req: Request) {
       }
     }
 
-    return tx.order.update({ where: { id: orderId }, data: { status } });
+    const updatedOrder = await tx.order.update({ where: { id: orderId }, data: { status } });
+    if (isAdmin) {
+      await tx.adminAuditLog.create({
+        data: {
+          adminId: user.id,
+          action: 'ORDER_STATUS_UPDATE',
+          targetType: 'ORDER',
+          targetId: orderId,
+          summary: `${order.orderNo} 상태 ${order.status} -> ${status}`,
+        },
+      });
+    }
+    return updatedOrder;
   });
 
   return NextResponse.json(updated);

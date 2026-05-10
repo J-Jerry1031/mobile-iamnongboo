@@ -5,6 +5,7 @@ import { won } from '@/lib/format';
 import { OrderActionButtons } from '@/components/OrderActionButtons';
 import Link from 'next/link';
 import { ChevronRight, MessageCircle, PackageCheck, ShoppingBag, Star } from 'lucide-react';
+import { orderStatusLabel, reviewableStatuses } from '@/lib/order-status';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,15 +16,6 @@ export default async function OrdersPage() {
   const productIds = [...new Set(orders.flatMap((order) => order.items.map((item) => item.productId)))];
   const products = await prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, image: true } });
   const productImageMap = new Map(products.map((product) => [product.id, product.image]));
-  const statusLabel = {
-    READY: '결제대기',
-    PAID: '결제완료',
-    CANCEL_REQUESTED: '취소요청',
-    CANCELED: '취소완료',
-    RETURN_REQUESTED: '반품요청',
-    RETURNED: '반품완료',
-  } as const;
-  const reviewableStatuses = ['PAID', 'RETURN_REQUESTED', 'RETURNED'];
   return <div className="px-5 pt-5">
     <div className="rounded-[24px] bg-[#214b36] p-5 text-white">
       <p className="text-[12px] font-bold text-[#f5d87a]">ORDERS</p>
@@ -42,7 +34,7 @@ export default async function OrdersPage() {
             <p className="font-black">{order.orderNo}</p>
             <p className="mt-1 text-xs text-[#7a6b4d]">{order.createdAt.toLocaleDateString('ko-KR')}</p>
           </div>
-          <p className="h-fit rounded-full bg-[#e5f0dc] px-3 py-1 text-xs font-black text-[#214b36]">{statusLabel[order.status]}</p>
+          <p className="h-fit rounded-full bg-[#e5f0dc] px-3 py-1 text-xs font-black text-[#214b36]">{orderStatusLabel[order.status]}</p>
         </div>
 
         <Link href={`/orders/${order.id}`} className="mt-4 flex gap-3 rounded-2xl bg-[#fffaf0] p-3 active:scale-[.99]">

@@ -17,6 +17,15 @@ export async function PATCH(req: Request) {
       status: 'ANSWERED',
     },
   });
+  await prisma.adminAuditLog.create({
+    data: {
+      adminId: admin.id,
+      action: 'INQUIRY_ANSWER',
+      targetType: 'INQUIRY',
+      targetId: inquiry.id,
+      summary: `${inquiry.title} 문의 답변 저장`,
+    },
+  });
 
   return NextResponse.json(inquiry);
 }

@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
 import { won } from '@/lib/format';
 import { OrderActionButtons } from '@/components/OrderActionButtons';
+import { orderStatusLabel, reviewableStatuses } from '@/lib/order-status';
 import {
   ChevronLeft,
   Clock3,
@@ -17,15 +18,6 @@ import {
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
-
-const statusLabel = {
-  READY: '결제대기',
-  PAID: '결제완료',
-  CANCEL_REQUESTED: '취소요청',
-  CANCELED: '취소완료',
-  RETURN_REQUESTED: '반품요청',
-  RETURNED: '반품완료',
-} as const;
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
@@ -41,7 +33,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const isPickup = order.address?.includes('매장 픽업');
   const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const deliveryFee = Math.max(0, order.totalAmount - subtotal);
-  const canReview = ['PAID', 'RETURN_REQUESTED', 'RETURNED'].includes(order.status);
+  const canReview = reviewableStatuses.includes(order.status);
 
   return (
     <div className="px-5 pb-8 pt-3">
@@ -57,7 +49,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <p className="mt-2 text-sm font-bold text-white/75">{order.orderNo}</p>
           </div>
           <span className="rounded-full bg-[#e5f0dc] px-3 py-1 text-xs font-black text-[#214b36]">
-            {statusLabel[order.status]}
+            {orderStatusLabel[order.status]}
           </span>
         </div>
       </section>
