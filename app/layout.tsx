@@ -3,6 +3,7 @@ import './globals.css';
 import { MobileHeader } from '@/components/MobileHeader';
 import { BottomNav } from '@/components/BottomNav';
 import { MobileFooter } from '@/components/MobileFooter';
+import { FullMenuDrawer } from '@/components/FullMenuDrawer';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <MobileFooter />
           </main>
           <BottomNav />
+          <FullMenuDrawer />
         </div>
       </body>
     </html>

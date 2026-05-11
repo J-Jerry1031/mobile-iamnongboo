@@ -57,8 +57,32 @@ function MenuLink({ href, label, icon: Icon, onClick }: { href: string; label: s
   );
 }
 
+export function openFullMenu() {
+  window.dispatchEvent(new Event('iamnongbu:open-menu'));
+}
+
+export function FullMenuButton() {
+  return (
+    <button
+      type="button"
+      onClick={openFullMenu}
+      className="flex flex-col items-center gap-1 text-[13px] font-medium text-[#111]"
+      aria-label="전체 메뉴 열기"
+    >
+      <Menu size={29} strokeWidth={1.7} />
+      메뉴
+    </button>
+  );
+}
+
 export function FullMenuDrawer() {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener('iamnongbu:open-menu', onOpen);
+    return () => window.removeEventListener('iamnongbu:open-menu', onOpen);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -76,22 +100,11 @@ export function FullMenuDrawer() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex flex-col items-center gap-1 text-[13px] font-medium text-[#111]"
-        aria-label="전체 메뉴 열기"
-        aria-expanded={open}
-      >
-        <Menu size={29} strokeWidth={1.7} />
-        메뉴
-      </button>
-
       {open && (
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-[80]">
           <button type="button" aria-label="전체 메뉴 닫기" onClick={() => setOpen(false)} className="absolute inset-0 bg-black/35" />
-          <aside className="absolute inset-y-0 left-1/2 flex w-full max-w-[430px] -translate-x-1/2 justify-end overflow-hidden">
-            <div className="h-full w-[86%] max-w-[370px] animate-[menuSlideIn_.22s_ease-out] overflow-y-auto bg-white px-5 pb-8 pt-[max(22px,env(safe-area-inset-top))] shadow-[-20px_0_40px_rgba(0,0,0,.18)]">
+          <aside className="absolute inset-y-0 left-1/2 flex w-full max-w-[430px] -translate-x-1/2 justify-end overflow-hidden pointer-events-none">
+            <div className="pointer-events-auto h-full w-[86%] max-w-[370px] animate-[menuSlideIn_.22s_ease-out] overflow-y-auto bg-white px-5 pb-8 pt-[max(22px,env(safe-area-inset-top))] shadow-[-20px_0_40px_rgba(0,0,0,.18)]">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[12px] font-black text-[#668f6b]">IAM FARMER</p>

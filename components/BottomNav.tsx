@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Home, Leaf, Heart } from 'lucide-react';
-import { FullMenuDrawer } from '@/components/FullMenuDrawer';
+import { FullMenuButton } from '@/components/FullMenuDrawer';
 
 export function BottomNav() {
   const item =
@@ -23,7 +23,7 @@ export function BottomNav() {
         이야기
       </Link>
 
-      <FullMenuDrawer />
+      <FullMenuButton />
     </nav>
   );
 }
