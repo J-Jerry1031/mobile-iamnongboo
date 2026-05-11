@@ -89,7 +89,7 @@ export function FullMenuButton() {
   );
 }
 
-export function FullMenuDrawer() {
+export function FullMenuDrawer({ isAdmin = false }: { isAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
 
   function closeMenu() {
@@ -175,10 +175,12 @@ export function FullMenuDrawer() {
                 </div>
               </section>
 
-              <Link href="/admin" onClick={closeMenu} className="mt-6 flex items-center justify-between rounded-2xl bg-[#fcfbf6] p-4 text-xs font-black text-[#7a6b4d] ring-1 ring-[#eadfce]">
-                관리자 페이지
-                <ChevronRight size={15} />
-              </Link>
+              {isAdmin && (
+                <Link href="/admin" onClick={closeMenu} className="mt-6 flex items-center justify-between rounded-2xl bg-[#fcfbf6] p-4 text-xs font-black text-[#7a6b4d] ring-1 ring-[#eadfce]">
+                  관리자 페이지
+                  <ChevronRight size={15} />
+                </Link>
+              )}
             </div>
           </aside>
         </div>

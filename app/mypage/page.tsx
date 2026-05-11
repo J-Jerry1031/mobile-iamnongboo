@@ -15,6 +15,7 @@ import {
   ReceiptText,
   ShieldCheck,
   Star,
+  TicketPercent,
   UserRound,
 } from 'lucide-react';
 
@@ -24,12 +25,20 @@ export default async function MyPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/mypage&reason=protected');
 
-  const [orderCount, reviewCount, inquiryCount, recentOrders, writtenReviews] = await Promise.all([
-    prisma.order.count({ where: user.role === 'ADMIN' ? {} : { userId: user.id } }),
+  const [orderCount, reviewCount, inquiryCount, usableCouponCount, recentOrders, writtenReviews] = await Promise.all([
+    prisma.order.count({ where: { userId: user.id } }),
     prisma.review.count({ where: { userId: user.id } }),
     prisma.inquiry.count({ where: { userId: user.id } }),
+    prisma.coupon.count({
+      where: {
+        isActive: true,
+        OR: [{ startsAt: null }, { startsAt: { lte: new Date() } }],
+        AND: [{ OR: [{ endsAt: null }, { endsAt: { gte: new Date() } }] }],
+        redemptions: { none: { userId: user.id } },
+      },
+    }),
     prisma.order.findMany({
-      where: user.role === 'ADMIN' ? {} : { userId: user.id },
+      where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
       take: 2,
       include: { items: true },
@@ -55,6 +64,12 @@ export default async function MyPage() {
       description: `${reviewCount}개의 작성 후기가 있어요`,
       href: '/mypage/reviews',
       icon: Star,
+    },
+    {
+      title: '쿠폰함',
+      description: `${usableCouponCount}개의 사용 가능한 쿠폰을 확인해요`,
+      href: '/mypage/coupons',
+      icon: TicketPercent,
     },
     {
       title: '배송지 관리',
@@ -116,10 +131,23 @@ export default async function MyPage() {
             <p className="mt-1 text-[11px] font-bold text-[#7a6b4d]">주문</p>
           </div>
           <div className="rounded-2xl bg-[#fcfbf6] p-3">
-            <p className="text-lg font-black text-[#214b36]">{reviewCount}</p>
-            <p className="mt-1 text-[11px] font-bold text-[#7a6b4d]">후기</p>
+            <p className="text-lg font-black text-[#214b36]">{usableCouponCount}</p>
+            <p className="mt-1 text-[11px] font-bold text-[#7a6b4d]">쿠폰</p>
           </div>
         </div>
+      </section>
+
+      <section className="mt-4 grid grid-cols-4 gap-2">
+        {[
+          ['결제완료', '/orders?tab=paid'],
+          ['배송/픽업', '/orders?tab=shipping'],
+          ['완료', '/orders?tab=done'],
+          ['취소/반품', '/orders?tab=request'],
+        ].map(([label, href]) => (
+          <Link key={label} href={href} className="rounded-2xl bg-white p-3 text-center text-[11px] font-black text-[#214b36] shadow-sm">
+            {label}
+          </Link>
+        ))}
       </section>
 
       <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">

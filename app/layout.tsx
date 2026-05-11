@@ -41,7 +41,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <MobileFooter />
           </main>
           <BottomNav />
-          <FullMenuDrawer />
+          <FullMenuDrawer isAdmin={user?.role === 'ADMIN'} />
         </div>
       </body>
     </html>

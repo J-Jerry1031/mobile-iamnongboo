@@ -2,7 +2,9 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { requireAdmin } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
-import { Bell, ChevronRight, ClipboardCheck, Eye, MessageCircle, PackageCheck, ShoppingBag, Star, TicketPercent, UsersRound } from 'lucide-react';
+import { Bell, ChevronRight, ClipboardCheck, Clock3, Eye, MessageCircle, PackageCheck, ShoppingBag, Star, TicketPercent, Truck, UsersRound } from 'lucide-react';
+import { orderStatusLabel } from '@/lib/order-status';
+import { won } from '@/lib/format';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
@@ -11,16 +13,20 @@ export default async function AdminPage() {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const [todayOrders, requestOrders, openInquiries, soldOutProducts, userCount, privacyLogCount, couponCount, restockCount, reviewCount] = await Promise.all([
+  const [todayOrders, requestOrders, openInquiries, soldOutProducts, lowStockProducts, preparingOrders, shippingReadyOrders, userCount, privacyLogCount, couponCount, restockCount, reviewCount, recentOrders] = await Promise.all([
     prisma.order.count({ where: { createdAt: { gte: today } } }),
     prisma.order.count({ where: { status: { in: ['CANCEL_REQUESTED', 'RETURN_REQUESTED'] } } }),
     prisma.inquiry.count({ where: { status: 'OPEN' } }),
     prisma.product.count({ where: { stock: { lte: 0 } } }),
+    prisma.product.count({ where: { stock: { gt: 0, lte: 5 }, isActive: true } }),
+    prisma.order.count({ where: { status: { in: ['PAID', 'PREPARING'] } } }),
+    prisma.order.count({ where: { status: { in: ['READY_FOR_PICKUP', 'SHIPPING'] } } }),
     prisma.user.count(),
     prisma.privacyAccessLog.count(),
     prisma.coupon.count(),
     prisma.restockAlert.count({ where: { status: 'WAITING' } }),
     prisma.review.count(),
+    prisma.order.findMany({ orderBy: { createdAt: 'desc' }, take: 4, include: { items: true } }),
   ]);
   const auditCount = await prisma.adminAuditLog.count();
 
@@ -29,6 +35,7 @@ export default async function AdminPage() {
     { label: '취소/반품 요청', value: requestOrders, href: '/admin/orders', icon: PackageCheck },
     { label: '답변대기 문의', value: openInquiries, href: '/admin/inquiries', icon: MessageCircle },
     { label: '품절 상품', value: soldOutProducts, href: '/admin/products', icon: ShoppingBag },
+    { label: '재고 5개 이하', value: lowStockProducts, href: '/admin/catalog-quality', icon: Bell },
     { label: '회원', value: userCount, href: '/admin/members', icon: UsersRound },
     { label: '쿠폰', value: couponCount, href: '/admin/coupons', icon: TicketPercent },
     { label: '재입고 알림', value: restockCount, href: '/admin/restock-alerts', icon: Bell },
@@ -53,6 +60,38 @@ export default async function AdminPage() {
             <p className="mt-1 text-xs font-bold text-[#7a6b4d]">{label}</p>
           </Link>
         ))}
+      </section>
+
+      <section className="mt-5 grid grid-cols-3 gap-2">
+        {[
+          { label: '처리 대기', value: preparingOrders, href: '/admin/orders', icon: Clock3 },
+          { label: '배송/픽업중', value: shippingReadyOrders, href: '/admin/orders', icon: Truck },
+          { label: '미답변 문의', value: openInquiries, href: '/admin/inquiries', icon: MessageCircle },
+        ].map(({ label, value, href, icon: Icon }) => (
+          <Link key={label} href={href} className="rounded-2xl bg-[#fcfbf6] p-3 text-center ring-1 ring-[#eadfce]">
+            <Icon className="mx-auto text-[#668f6b]" size={18} />
+            <p className="mt-2 text-lg font-black text-[#214b36]">{value}</p>
+            <p className="mt-1 text-[11px] font-bold text-[#7a6b4d]">{label}</p>
+          </Link>
+        ))}
+      </section>
+
+      <section className="mt-5 rounded-3xl bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h2 className="font-black text-[#1f2a24]">최근 주문</h2>
+          <Link href="/admin/orders" className="text-xs font-black text-[#214b36]">전체보기</Link>
+        </div>
+        <div className="mt-4 space-y-2">
+          {recentOrders.map((order) => (
+            <Link key={order.id} href={`/orders/${order.id}`} className="flex items-center justify-between gap-3 rounded-2xl bg-[#fffaf0] p-3">
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-black text-[#1f2a24]">{order.items[0]?.name || order.orderNo}</span>
+                <span className="mt-1 block text-xs font-bold text-[#7a6b4d]">{order.orderNo} · {orderStatusLabel[order.status]}</span>
+              </span>
+              <span className="shrink-0 text-sm font-black text-[#214b36]">{won(order.totalAmount)}</span>
+            </Link>
+          ))}
+        </div>
       </section>
 
       <div className="mt-5 grid gap-3">

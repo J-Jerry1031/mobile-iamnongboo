@@ -12,6 +12,7 @@ import {
   Search,
   ShieldCheck,
   Truck,
+  Store,
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -249,7 +250,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="px-6 pb-4 pt-2">
+      <section className="px-6 pb-2 pt-2">
         <div className="rounded-[22px] bg-[#fcfbf6] p-5 ring-1 ring-[#eadfce]">
           <div className="flex items-center gap-3">
             <Leaf className="text-[#668f6b]" size={24} />
@@ -269,6 +270,27 @@ export default async function HomePage() {
             <span className="rounded-full bg-white px-3 py-2">
               <Clock3 className="mr-1 inline" size={14} /> 빠른 출고
             </span>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-6 pb-10 pt-5">
+        <div className="rounded-[22px] bg-[#214b36] p-5 text-white">
+          <p className="text-[12px] font-bold text-[#f5d87a]">PICKUP & DELIVERY</p>
+          <h2 className="mt-2 text-[21px] font-black leading-tight">
+            오늘 주문 전<br />수령 방법을 확인하세요
+          </h2>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-[12px] font-bold">
+            <Link href="/checkout" className="rounded-2xl bg-white/12 p-3 active:scale-[.99]">
+              <Store className="mb-2 text-[#f5d87a]" size={18} />
+              매장 픽업
+              <span className="mt-1 block text-[10px] leading-4 text-white/65">준비 완료 후 안내</span>
+            </Link>
+            <Link href="/checkout" className="rounded-2xl bg-white/12 p-3 active:scale-[.99]">
+              <Truck className="mb-2 text-[#f5d87a]" size={18} />
+              배송 받기
+              <span className="mt-1 block text-[10px] leading-4 text-white/65">3만원 이상 무료</span>
+            </Link>
           </div>
         </div>
       </section>
