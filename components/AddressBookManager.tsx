@@ -1,6 +1,7 @@
 'use client';
 
 import { KakaoPostcodeButton } from '@/components/KakaoPostcodeButton';
+import { formatPhone } from '@/lib/phone';
 import { Home, PlusCircle, Star, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -19,7 +20,7 @@ export function AddressBookManager({ initialAddresses, userName, userPhone }: { 
   const [addresses, setAddresses] = useState(initialAddresses);
   const [label, setLabel] = useState('우리집');
   const [recipient, setRecipient] = useState(userName);
-  const [phone, setPhone] = useState(userPhone);
+  const [phone, setPhone] = useState(formatPhone(userPhone));
   const [zonecode, setZonecode] = useState('');
   const [address, setAddress] = useState('');
   const [detail, setDetail] = useState('');
@@ -84,7 +85,7 @@ export function AddressBookManager({ initialAddresses, userName, userPhone }: { 
         <form onSubmit={addAddress} className="mt-4 space-y-3">
           <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="배송지 이름 예: 우리집" className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
           <input value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="받는 분" className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="010-0000-0000" className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
+          <input value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} maxLength={13} inputMode="tel" placeholder="010-0000-0000" className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
           <div className="flex gap-2">
             <input value={zonecode} readOnly placeholder="우편번호" className="min-w-0 flex-1 rounded-2xl bg-[#fffaf0] p-4 outline-none" />
             <KakaoPostcodeButton
@@ -123,7 +124,7 @@ export function AddressBookManager({ initialAddresses, userName, userPhone }: { 
                     {item.isDefault && <span className="rounded-full bg-[#214b36] px-2 py-1 text-[10px] text-white">기본</span>}
                   </p>
                   <p className="mt-2 text-xs font-bold leading-5 text-[#7a6b4d]">
-                    {item.recipient} · {item.phone}<br />
+                    {item.recipient} · {formatPhone(item.phone)}<br />
                     {item.zonecode ? `(${item.zonecode}) ` : ''}{item.address} {item.detail || ''}
                   </p>
                 </div>

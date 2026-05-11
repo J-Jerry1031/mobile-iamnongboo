@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
-
-function normalizePhone(phone: unknown) {
-  return String(phone || '').replaceAll('-', '').replaceAll(' ', '');
-}
+import { normalizePhone } from '@/lib/phone';
 
 function normalizeText(value: unknown) {
   return String(value || '').trim();

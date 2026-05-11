@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { requireAdmin } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
 import { won } from '@/lib/format';
+import { formatPhone } from '@/lib/phone';
 import { AdminOrderButtons } from '@/components/AdminOrderButtons';
 import { Clock3, PackageCheck, Phone, UserRound } from 'lucide-react';
 import { orderStatusLabel } from '@/lib/order-status';
@@ -54,7 +55,7 @@ export default async function AdminOrdersPage() {
 
             <div className="mt-4 grid gap-2 rounded-2xl bg-[#fffaf0] p-3 text-[#5b5141]">
               <p className="flex items-center gap-2"><UserRound size={15} className="text-[#668f6b]" /> {order.buyerName}</p>
-              <p className="flex items-center gap-2"><Phone size={15} className="text-[#668f6b]" /> {order.buyerPhone}</p>
+              <p className="flex items-center gap-2"><Phone size={15} className="text-[#668f6b]" /> {formatPhone(order.buyerPhone)}</p>
               {order.address && <p className="text-xs font-bold leading-5 text-[#7a6b4d]">{order.address}</p>}
             </div>
 

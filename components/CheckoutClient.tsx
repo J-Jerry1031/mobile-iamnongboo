@@ -3,6 +3,7 @@
 import { loadTossPayments } from '@tosspayments/tosspayments-sdk';
 import { useCart } from '@/lib/cart-store';
 import { won } from '@/lib/format';
+import { formatPhone, normalizePhone } from '@/lib/phone';
 import { KakaoPostcodeButton } from '@/components/KakaoPostcodeButton';
 import {
   CheckCircle2,
@@ -50,7 +51,7 @@ export function CheckoutClient() {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const deliveryFee = deliveryMethod === 'pickup' || subtotal === 0 || subtotal >= 30000 ? 0 : 3000;
   const total = subtotal + deliveryFee;
-  const normalizedPhone = buyerPhone.replaceAll('-', '').replaceAll(' ', '');
+  const normalizedPhone = normalizePhone(buyerPhone);
   const fullAddress = useMemo(
     () => [zonecode ? `(${zonecode})` : '', address, addressDetail].filter(Boolean).join(' '),
     [address, addressDetail, zonecode],
@@ -100,7 +101,7 @@ export function CheckoutClient() {
   function selectAddress(nextAddress: SavedAddress) {
     setSelectedAddressId(nextAddress.id);
     setBuyerName(nextAddress.recipient);
-    setBuyerPhone(nextAddress.phone);
+    setBuyerPhone(formatPhone(nextAddress.phone));
     setZonecode(nextAddress.zonecode || '');
     setAddress(nextAddress.address);
     setAddressDetail(nextAddress.detail || '');
@@ -215,7 +216,7 @@ export function CheckoutClient() {
           </label>
           <label className="block">
             <span className="mb-2 block text-xs font-black text-[#7a6b4d]">연락처</span>
-            <input value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} placeholder="010-0000-0000" inputMode="tel" className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
+            <input value={buyerPhone} onChange={(e) => setBuyerPhone(formatPhone(e.target.value))} maxLength={13} placeholder="010-0000-0000" inputMode="tel" className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
           </label>
         </div>
       </section>
@@ -274,7 +275,7 @@ export function CheckoutClient() {
                           {item.isDefault && <span className="rounded-full bg-white px-2 py-1 text-[10px] text-[#214b36]">기본</span>}
                         </span>
                         <span className="mt-2 block text-xs font-bold leading-5 text-[#7a6b4d]">
-                          {item.recipient} · {item.phone}<br />
+                          {item.recipient} · {formatPhone(item.phone)}<br />
                           {item.zonecode ? `(${item.zonecode}) ` : ''}{item.address} {item.detail || ''}
                         </span>
                       </button>

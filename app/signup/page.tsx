@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { MapPin, ShieldCheck, UserPlus } from 'lucide-react';
 import { KakaoPostcodeButton } from '@/components/KakaoPostcodeButton';
+import { formatPhone } from '@/lib/phone';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [zonecode, setZonecode] = useState('');
   const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -55,7 +57,7 @@ export default function SignupPage() {
         </label>
         <label className="block">
           <span className="mb-2 block text-xs font-black text-[#7a6b4d]">연락처</span>
-          <input name="phone" inputMode="tel" placeholder="010-0000-0000" className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
+          <input name="phone" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} maxLength={13} inputMode="tel" placeholder="010-0000-0000" className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
         </label>
         <label className="block">
           <span className="mb-2 block text-xs font-black text-[#7a6b4d]">비밀번호</span>

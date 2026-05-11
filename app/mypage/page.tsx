@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth-lite';
 import { LogoutButton } from '@/components/LogoutButton';
 import { prisma } from '@/lib/prisma';
 import { reviewableStatuses } from '@/lib/order-status';
+import { formatPhone } from '@/lib/phone';
 import {
   ChevronRight,
   ClipboardList,
@@ -137,7 +138,7 @@ export default async function MyPage() {
           </div>
           <div className="flex justify-between gap-4">
             <span className="font-bold text-[#7a6b4d]">연락처</span>
-            <span className="font-black">{user.phone || '미등록'}</span>
+            <span className="font-black">{user.phone ? formatPhone(user.phone) : '미등록'}</span>
           </div>
         </div>
       </section>

@@ -2,11 +2,12 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { setAuthCookies } from '@/lib/auth-lite';
+import { normalizePhone } from '@/lib/phone';
 
 export async function POST(req: Request) {
   const { name, email, phone, password, zonecode, address, addressDetail } = await req.json();
   const normalizedEmail = String(email || '').trim().toLowerCase();
-  const normalizedPhone = String(phone || '').replaceAll('-', '').replaceAll(' ', '');
+  const normalizedPhone = normalizePhone(phone);
   const rawPassword = String(password || '');
   const trimmedName = String(name || '').trim();
   const trimmedAddress = String(address || '').trim();
