@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { won } from '@/lib/format';
 import { AddToCartButton } from '@/components/AddToCartButton';
 import { ProductImage } from '@/components/ProductImage';
+import { RestockAlertForm } from '@/components/RestockAlertForm';
 import {
   BadgeCheck,
   ChevronLeft,
@@ -94,6 +95,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
       </div>
 
       <p className="mt-4 rounded-3xl bg-white p-5 text-sm leading-7 text-[#5b5141]">{product.description}</p>
+      {(!product.isActive || product.stock <= 0) && <RestockAlertForm productId={product.id} />}
       </section>
 
       <nav className="mx-5 mt-5 grid grid-cols-3 rounded-2xl bg-white p-1 text-center text-sm font-black text-[#214b36] shadow-sm">

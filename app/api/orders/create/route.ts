@@ -5,6 +5,7 @@ import { notifyAdmin } from '@/lib/notify';
 import { normalizePhone } from '@/lib/phone';
 import { asRecord, safeCuid, safeText, safeTossOrderId } from '@/lib/security';
 import { rateLimit } from '@/lib/rate-limit';
+import { calculateCouponDiscount, normalizeCouponCode } from '@/lib/coupons';
 
 type IncomingCartItem = {
   id: string;
@@ -17,13 +18,14 @@ export async function POST(req: Request) {
 
   const user = await getCurrentUser();
   const body = asRecord(await req.json());
-  const { items, buyerName, buyerPhone, address, deliveryMethod, tossOrderId } = body as {
+  const { items, buyerName, buyerPhone, address, deliveryMethod, tossOrderId, couponCode } = body as {
     items?: IncomingCartItem[];
     buyerName?: string;
     buyerPhone?: string;
     address?: string;
     deliveryMethod?: 'pickup' | 'delivery';
     tossOrderId?: string;
+    couponCode?: string;
   };
 
   const safeBuyerName = safeText(buyerName, 50);
@@ -61,7 +63,13 @@ export async function POST(req: Request) {
 
   const subtotal = orderItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const deliveryFee = deliveryMethod === 'delivery' && subtotal < 30000 ? 3000 : 0;
-  const totalAmount = subtotal + deliveryFee;
+  const normalizedCouponCode = normalizeCouponCode(couponCode);
+  const coupon = normalizedCouponCode ? await prisma.coupon.findUnique({ where: { code: normalizedCouponCode } }) : null;
+  const discountAmount = coupon ? calculateCouponDiscount(coupon, subtotal, deliveryFee) : 0;
+  if (normalizedCouponCode && (!coupon || discountAmount <= 0)) {
+    return NextResponse.json({ message: '사용할 수 없는 쿠폰입니다.' }, { status: 400 });
+  }
+  const totalAmount = subtotal + deliveryFee - discountAmount;
   const orderNo = `IMF-${Date.now()}`;
 
   const order = await prisma.order.create({
@@ -72,6 +80,9 @@ export async function POST(req: Request) {
       buyerName: safeBuyerName,
       buyerPhone: normalizedBuyerPhone,
       address: deliveryMethod === 'pickup' ? `매장 픽업${safeAddress ? ` / ${safeAddress}` : ''}` : safeAddress,
+      deliveryMethod,
+      discountAmount,
+      couponCode: coupon?.code || null,
       totalAmount,
       status: 'READY',
       items: { create: orderItems.map(({ product, quantity }) => ({ productId: product.id, name: product.name, price: product.price, quantity })) },

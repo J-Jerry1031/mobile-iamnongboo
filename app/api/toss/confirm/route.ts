@@ -56,6 +56,42 @@ export async function POST(req: Request) {
           data: { stock: { decrement: item.quantity } },
         });
       }
+      if (order.userId) {
+        const points = Math.floor(order.totalAmount * 0.01);
+        if (points > 0) {
+          await tx.user.update({
+            where: { id: order.userId },
+            data: { points: { increment: points } },
+          });
+          await tx.pointLog.create({
+            data: {
+              userId: order.userId,
+              amount: points,
+              reason: '구매 적립',
+              refType: 'ORDER',
+              refId: order.id,
+            },
+          });
+        }
+      }
+      if (order.couponCode) {
+        const coupon = await tx.coupon.findUnique({ where: { code: order.couponCode } });
+        if (coupon && order.discountAmount > 0) {
+          await tx.coupon.update({
+            where: { id: coupon.id },
+            data: { usedCount: { increment: 1 } },
+          });
+          await tx.couponRedemption.create({
+            data: {
+              couponId: coupon.id,
+              orderId: order.id,
+              userId: order.userId,
+              code: coupon.code,
+              amount: order.discountAmount,
+            },
+          });
+        }
+      }
       await tx.order.update({ where: { id: order.id }, data: { status: 'PAID', paymentKey } });
     });
   }

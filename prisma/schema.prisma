@@ -47,6 +47,8 @@ model User {
   auditLogs AdminAuditLog[]
   deliveryAddresses DeliveryAddress[]
   privacyAccessLogs PrivacyAccessLog[]
+  couponRedemptions CouponRedemption[]
+  restockAlerts RestockAlert[]
 }
 
 model Product {
@@ -63,6 +65,7 @@ model Product {
   sortOrder    Int      @default(0)
   createdAt    DateTime @default(now())
   reviews      Review[]
+  restockAlerts RestockAlert[]
 }
 
 model Order {
@@ -73,12 +76,20 @@ model Order {
   buyerName   String
   buyerPhone  String
   address     String?
+  deliveryMethod String?
+  discountAmount Int         @default(0)
+  couponCode  String?
+  carrier     String?
+  trackingNumber String?
+  trackingUrl String?
+  shippedAt   DateTime?
   totalAmount Int
   status      OrderStatus @default(READY)
   paymentKey  String?
   tossOrderId String?     @unique
   createdAt   DateTime    @default(now())
   items       OrderItem[]
+  couponRedemptions CouponRedemption[]
 }
 
 model OrderItem {
@@ -162,4 +173,49 @@ model DeliveryAddress {
   detail    String?
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model Coupon {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  name           String
+  discountType   String
+  discountValue  Int
+  minOrderAmount Int      @default(0)
+  maxDiscount    Int?
+  usageLimit     Int?
+  usedCount      Int      @default(0)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  redemptions    CouponRedemption[]
+}
+
+model CouponRedemption {
+  id        String   @id @default(cuid())
+  couponId  String
+  coupon    Coupon   @relation(fields: [couponId], references: [id])
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  code      String
+  amount    Int
+  createdAt DateTime @default(now())
+
+  @@unique([couponId, orderId])
+}
+
+model RestockAlert {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  phone     String
+  status    String   @default("WAITING")
+  createdAt DateTime @default(now())
+
+  @@unique([productId, phone])
 }

@@ -5,6 +5,7 @@ import { won } from '@/lib/format';
 import { maskAddress, maskPhone } from '@/lib/privacy';
 import { writePrivacyAccessLog } from '@/lib/privacy-audit';
 import { AdminOrderButtons } from '@/components/AdminOrderButtons';
+import { AdminShipmentForm } from '@/components/AdminShipmentForm';
 import { Clock3, PackageCheck, Phone, UserRound } from 'lucide-react';
 import { orderStatusLabel } from '@/lib/order-status';
 export const dynamic = 'force-dynamic';
@@ -79,6 +80,14 @@ export default async function AdminOrdersPage() {
             </div>
 
             <p className="mt-4 text-base font-black text-[#214b36]">{won(order.totalAmount)}</p>
+            {order.trackingNumber && (
+              <p className="mt-2 rounded-2xl bg-[#e5f0dc] p-3 text-xs font-black text-[#214b36]">
+                {order.carrier} · {order.trackingNumber}
+              </p>
+            )}
+            {order.deliveryMethod === 'delivery' && (
+              <AdminShipmentForm orderId={order.id} carrier={order.carrier} trackingNumber={order.trackingNumber} trackingUrl={order.trackingUrl} />
+            )}
             <AdminOrderButtons orderId={order.id} status={order.status} />
           </div>
         ))}

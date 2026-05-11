@@ -104,6 +104,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         <div className="mt-4 space-y-3 text-sm font-bold text-[#5b5141]">
           <div className="flex justify-between"><span>상품금액</span><span>{won(subtotal)}</span></div>
           <div className="flex justify-between"><span>배송비</span><span>{deliveryFee ? won(deliveryFee) : '무료'}</span></div>
+          {order.discountAmount > 0 && <div className="flex justify-between text-[#214b36]"><span>쿠폰할인</span><span>-{won(order.discountAmount)}</span></div>}
           <div className="flex justify-between border-t border-[#eadfce] pt-4 text-lg font-black text-[#1f2a24]">
             <span>총 결제금액</span><span className="text-[#214b36]">{won(order.totalAmount)}</span>
           </div>
@@ -125,6 +126,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <span>상품 이상은 수령 당일 사진과 함께 문의해주세요.</span>
           </p>
           {order.address && <p className="rounded-2xl bg-white p-3 font-bold text-[#214b36]">{order.address}</p>}
+          {order.trackingNumber && (
+            <div className="rounded-2xl bg-white p-3 font-bold text-[#214b36]">
+              <p>{order.carrier} · {order.trackingNumber}</p>
+              {order.trackingUrl && <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex rounded-full bg-[#214b36] px-3 py-2 text-xs text-white">배송조회</a>}
+            </div>
+          )}
         </div>
       </section>
 

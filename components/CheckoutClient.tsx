@@ -45,12 +45,16 @@ export function CheckoutClient() {
   const [canUseAddressBook, setCanUseAddressBook] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; name: string; discountAmount: number } | null>(null);
+  const [couponMessage, setCouponMessage] = useState('');
   const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'delivery'>('pickup');
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const deliveryFee = deliveryMethod === 'pickup' || subtotal === 0 || subtotal >= 30000 ? 0 : 3000;
-  const total = subtotal + deliveryFee;
+  const discountAmount = appliedCoupon?.discountAmount || 0;
+  const total = Math.max(0, subtotal + deliveryFee - discountAmount);
   const normalizedPhone = normalizePhone(buyerPhone);
   const fullAddress = useMemo(
     () => [zonecode ? `(${zonecode})` : '', address, addressDetail].filter(Boolean).join(' '),
@@ -140,6 +144,25 @@ export function CheckoutClient() {
     }
   }
 
+  async function applyCoupon() {
+    try {
+      setCouponMessage('');
+      const res = await fetch('/api/coupons/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: couponCode, items, deliveryMethod }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || '쿠폰 적용 실패');
+      setAppliedCoupon(data.coupon);
+      setCouponCode(data.coupon.code);
+      setCouponMessage(`${data.coupon.name} 쿠폰이 적용됐어요.`);
+    } catch (error) {
+      setAppliedCoupon(null);
+      setCouponMessage(error instanceof Error ? error.message : '쿠폰을 적용하지 못했어요.');
+    }
+  }
+
   async function pay() {
     try {
       if (!items.length) return alert('장바구니가 비어 있어요.');
@@ -160,6 +183,7 @@ export function CheckoutClient() {
           address: deliveryMethod === 'pickup' ? pickupMemo : fullAddress,
           deliveryMethod,
           tossOrderId,
+          couponCode: appliedCoupon?.code,
         }),
       });
       if (!createRes.ok) throw new Error((await createRes.json()).message || '주문 생성 실패');
@@ -219,6 +243,23 @@ export function CheckoutClient() {
             <input value={buyerPhone} onChange={(e) => setBuyerPhone(formatPhone(e.target.value))} maxLength={13} placeholder="010-0000-0000" inputMode="tel" className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
           </label>
         </div>
+      </section>
+
+      <section className="mt-4 rounded-3xl bg-white p-5">
+        <h2 className="flex items-center gap-2 font-black">
+          <CheckCircle2 size={19} className="text-[#668f6b]" /> 쿠폰/할인
+        </h2>
+        <div className="mt-4 flex gap-2">
+          <input value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="쿠폰 코드" className="min-w-0 flex-1 rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
+          <button type="button" onClick={applyCoupon} className="shrink-0 rounded-2xl bg-[#214b36] px-4 text-sm font-black text-white">
+            적용
+          </button>
+        </div>
+        {couponMessage && (
+          <p className={`mt-3 rounded-2xl p-3 text-xs font-black ${appliedCoupon ? 'bg-[#e5f0dc] text-[#214b36]' : 'bg-red-50 text-red-600'}`}>
+            {couponMessage}
+          </p>
+        )}
       </section>
 
       <section className="mt-4 rounded-3xl bg-white p-5">
@@ -357,6 +398,7 @@ export function CheckoutClient() {
         <div className="mt-5 space-y-3 border-t border-[#eadfce] pt-4 text-sm font-bold text-[#5b5141]">
           <div className="flex justify-between"><span>상품금액</span><span>{won(subtotal)}</span></div>
           <div className="flex justify-between"><span>배송비</span><span>{deliveryFee ? won(deliveryFee) : '무료'}</span></div>
+          {discountAmount > 0 && <div className="flex justify-between text-[#214b36]"><span>쿠폰할인</span><span>-{won(discountAmount)}</span></div>}
         </div>
         <div className="mt-4 flex justify-between border-t border-[#eadfce] pt-4 text-lg font-black"><span>총 결제금액</span><span>{won(total)}</span></div>
       </section>
