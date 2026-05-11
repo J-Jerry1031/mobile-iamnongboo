@@ -4,7 +4,7 @@ import { prisma } from './prisma';
 
 const SESSION_COOKIE = 'imf_session';
 const LEGACY_COOKIE = 'imf_user_id';
-const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
+const DEFAULT_SESSION_MAX_AGE = 60 * 60 * 2;
 type CookieOptions = {
   httpOnly?: boolean;
   sameSite?: 'lax' | 'strict' | 'none';
@@ -20,6 +20,11 @@ type CookieResponse = Response & {
 
 function getSessionSecret() {
   return process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || process.env.TOSS_SECRET_KEY || 'iamnongbu-local-dev-secret';
+}
+
+function getSessionMaxAge() {
+  const value = Number(process.env.AUTH_SESSION_MAX_AGE_SECONDS || DEFAULT_SESSION_MAX_AGE);
+  return Number.isInteger(value) && value > 0 ? value : DEFAULT_SESSION_MAX_AGE;
 }
 
 function sign(value: string) {
@@ -45,7 +50,7 @@ function verifySignedValue(value?: string) {
 }
 
 export function createSessionCookieValue(userId: string) {
-  const payload = Buffer.from(JSON.stringify({ userId, exp: Date.now() + SESSION_MAX_AGE * 1000 })).toString('base64url');
+  const payload = Buffer.from(JSON.stringify({ userId, exp: Date.now() + getSessionMaxAge() * 1000 })).toString('base64url');
   return `${payload}.${sign(payload)}`;
 }
 
@@ -55,7 +60,7 @@ export function setAuthCookies(res: CookieResponse, userId: string) {
     sameSite: 'lax' as const,
     secure: process.env.NODE_ENV === 'production',
     path: '/',
-    maxAge: SESSION_MAX_AGE,
+    maxAge: getSessionMaxAge(),
   };
 
   res.cookies.set(SESSION_COOKIE, createSessionCookieValue(userId), options);

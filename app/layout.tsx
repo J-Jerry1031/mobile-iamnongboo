@@ -4,6 +4,8 @@ import { MobileHeader } from '@/components/MobileHeader';
 import { BottomNav } from '@/components/BottomNav';
 import { MobileFooter } from '@/components/MobileFooter';
 import { FullMenuDrawer } from '@/components/FullMenuDrawer';
+import { AuthCartReset } from '@/components/AuthCartReset';
+import { getCurrentUser } from '@/lib/auth-lite';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
@@ -25,11 +27,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const user = await getCurrentUser();
+
   return (
     <html lang="ko">
       <body>
         <div className="mobile-shell">
+          <AuthCartReset isAuthenticated={Boolean(user)} />
           <MobileHeader />
           <main className="pb-24">
             {children}

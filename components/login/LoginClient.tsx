@@ -10,8 +10,8 @@ export function LoginClient() {
   const searchParams = useSearchParams();
   const next = searchParams.get('next') || '/mypage';
   const reason = searchParams.get('reason');
-  const [email, setEmail] = useState(searchParams.get('type') === 'user' ? 'test@iamnongbu.local' : 'admin@iamnongbu.local');
-  const [password, setPassword] = useState(searchParams.get('type') === 'user' ? 'test1234!' : 'admin1234!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   async function submit(e: React.FormEvent) {
@@ -54,10 +54,10 @@ export function LoginClient() {
       </div>
       <button className="mt-5 w-full rounded-2xl bg-[#214b36] py-4 font-black text-white">로그인</button>
       <p className="mt-3 flex items-center justify-center gap-1 text-xs font-bold text-[#668f6b]">
-        <ShieldCheck size={14} /> 테스트 계정으로 바로 확인할 수 있어요.
+        <ShieldCheck size={14} /> 아이디와 비밀번호를 입력해 로그인해주세요.
       </p>
       <div className="mt-4 grid grid-cols-2 gap-2 text-center text-xs font-bold text-[#214b36]">
-        <Link href={`/login?type=user&next=${encodeURIComponent(next)}`} className="rounded-2xl bg-white p-3">고객 테스트</Link>
+        <Link href={`/login?next=${encodeURIComponent(next)}`} className="rounded-2xl bg-white p-3">다시 입력</Link>
         <Link href="/signup" className="rounded-2xl bg-white p-3">회원가입</Link>
       </div>
     </form>
