@@ -2,14 +2,17 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
 import { stockHeldStatuses } from '@/lib/order-status';
+import { asRecord, safeCuid, safeOrderStatus } from '@/lib/security';
 
 export async function PATCH(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ message: '로그인이 필요해요.' }, { status: 401 });
 
-  const { orderId, status } = await req.json();
-  const allowedStatuses = ['READY', 'PAID', 'PREPARING', 'READY_FOR_PICKUP', 'SHIPPING', 'COMPLETED', 'CANCEL_REQUESTED', 'CANCELED', 'RETURN_REQUESTED', 'RETURNED'];
-  if (!allowedStatuses.includes(status)) {
+  const body = asRecord(await req.json());
+  const orderId = safeCuid(body.orderId);
+  const status = safeOrderStatus(body.status);
+  if (!orderId) return NextResponse.json({ message: '주문 ID가 필요해요.' }, { status: 400 });
+  if (!status) {
     return NextResponse.json({ message: '변경할 수 없는 주문 상태입니다.' }, { status: 400 });
   }
 

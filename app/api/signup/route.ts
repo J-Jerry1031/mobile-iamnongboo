@@ -3,16 +3,18 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { setAuthCookies } from '@/lib/auth-lite';
 import { normalizePhone } from '@/lib/phone';
+import { asRecord, safeText } from '@/lib/security';
 
 export async function POST(req: Request) {
-  const { name, email, phone, password, zonecode, address, addressDetail } = await req.json();
-  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const body = asRecord(await req.json());
+  const { name, email, phone, password, zonecode, address, addressDetail } = body;
+  const normalizedEmail = safeText(email, 254).toLowerCase();
   const normalizedPhone = normalizePhone(phone);
   const rawPassword = String(password || '');
-  const trimmedName = String(name || '').trim();
-  const trimmedAddress = String(address || '').trim();
-  const trimmedZonecode = String(zonecode || '').trim();
-  const trimmedAddressDetail = String(addressDetail || '').trim();
+  const trimmedName = safeText(name, 50);
+  const trimmedAddress = safeText(address, 300);
+  const trimmedZonecode = safeText(zonecode, 10);
+  const trimmedAddressDetail = safeText(addressDetail, 200);
 
   if (!trimmedName) {
     return NextResponse.json({ message: '이름을 입력해주세요.' }, { status: 400 });

@@ -2,20 +2,19 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
 import { normalizePhone } from '@/lib/phone';
-
-function normalizeText(value: unknown) {
-  return String(value || '').trim();
-}
+import { asRecord, safeCuid, safeText } from '@/lib/security';
 
 export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ message: '로그인이 필요해요.' }, { status: 401 });
 
-  const { id } = await context.params;
+  const { id: rawId } = await context.params;
+  const id = safeCuid(rawId);
+  if (!id) return NextResponse.json({ message: '배송지를 찾을 수 없어요.' }, { status: 404 });
   const current = await prisma.deliveryAddress.findFirst({ where: { id, userId: user.id } });
   if (!current) return NextResponse.json({ message: '배송지를 찾을 수 없어요.' }, { status: 404 });
 
-  const body = await req.json();
+  const body = asRecord(await req.json());
   const data: {
     label?: string;
     recipient?: string;
@@ -26,21 +25,21 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     isDefault?: boolean;
   } = {};
 
-  if ('label' in body) data.label = normalizeText(body.label) || '배송지';
+  if ('label' in body) data.label = safeText(body.label, 30) || '배송지';
   if ('recipient' in body) {
-    data.recipient = normalizeText(body.recipient);
+    data.recipient = safeText(body.recipient, 50);
     if (!data.recipient) return NextResponse.json({ message: '받는 분 이름을 입력해주세요.' }, { status: 400 });
   }
   if ('phone' in body) {
     data.phone = normalizePhone(body.phone);
     if (!/^01\d{8,9}$/.test(data.phone)) return NextResponse.json({ message: '연락처를 정확히 입력해주세요.' }, { status: 400 });
   }
-  if ('zonecode' in body) data.zonecode = normalizeText(body.zonecode) || null;
+  if ('zonecode' in body) data.zonecode = safeText(body.zonecode, 10) || null;
   if ('address' in body) {
-    data.address = normalizeText(body.address);
+    data.address = safeText(body.address, 300);
     if (!data.address) return NextResponse.json({ message: '주소를 검색해주세요.' }, { status: 400 });
   }
-  if ('detail' in body) data.detail = normalizeText(body.detail) || null;
+  if ('detail' in body) data.detail = safeText(body.detail, 200) || null;
   if ('isDefault' in body) data.isDefault = Boolean(body.isDefault);
 
   const updated = await prisma.$transaction(async (tx) => {
@@ -64,7 +63,9 @@ export async function DELETE(_req: Request, context: { params: Promise<{ id: str
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ message: '로그인이 필요해요.' }, { status: 401 });
 
-  const { id } = await context.params;
+  const { id: rawId } = await context.params;
+  const id = safeCuid(rawId);
+  if (!id) return NextResponse.json({ message: '배송지를 찾을 수 없어요.' }, { status: 404 });
   const current = await prisma.deliveryAddress.findFirst({ where: { id, userId: user.id } });
   if (!current) return NextResponse.json({ message: '배송지를 찾을 수 없어요.' }, { status: 404 });
 

@@ -1,19 +1,22 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
+import { asRecord, safeCuid, safeText } from '@/lib/security';
 
 export async function PATCH(req: Request) {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ message: '관리자만 가능합니다.' }, { status: 403 });
 
-  const { inquiryId, answer } = await req.json();
+  const body = asRecord(await req.json());
+  const inquiryId = safeCuid(body.inquiryId);
+  const answer = safeText(body.answer, 2000);
   if (!inquiryId) return NextResponse.json({ message: '문의 ID가 필요해요.' }, { status: 400 });
-  if (!String(answer || '').trim()) return NextResponse.json({ message: '답변 내용을 입력해주세요.' }, { status: 400 });
+  if (!answer) return NextResponse.json({ message: '답변 내용을 입력해주세요.' }, { status: 400 });
 
   const inquiry = await prisma.inquiry.update({
     where: { id: inquiryId },
     data: {
-      answer: String(answer).trim(),
+      answer,
       status: 'ANSWERED',
     },
   });

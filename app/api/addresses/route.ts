@@ -2,10 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
 import { normalizePhone } from '@/lib/phone';
-
-function normalizeText(value: unknown) {
-  return String(value || '').trim();
-}
+import { asRecord, safeText } from '@/lib/security';
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -23,13 +20,13 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ message: '로그인이 필요해요.' }, { status: 401 });
 
-  const body = await req.json();
-  const label = normalizeText(body.label) || '배송지';
-  const recipient = normalizeText(body.recipient);
+  const body = asRecord(await req.json());
+  const label = safeText(body.label, 30) || '배송지';
+  const recipient = safeText(body.recipient, 50);
   const phone = normalizePhone(body.phone);
-  const zonecode = normalizeText(body.zonecode) || null;
-  const address = normalizeText(body.address);
-  const detail = normalizeText(body.detail) || null;
+  const zonecode = safeText(body.zonecode, 10) || null;
+  const address = safeText(body.address, 300);
+  const detail = safeText(body.detail, 200) || null;
 
   if (!recipient) return NextResponse.json({ message: '받는 분 이름을 입력해주세요.' }, { status: 400 });
   if (!/^01\d{8,9}$/.test(phone)) return NextResponse.json({ message: '연락처를 정확히 입력해주세요.' }, { status: 400 });

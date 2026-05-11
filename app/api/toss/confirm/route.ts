@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { asRecord, safeText, safeTossOrderId } from '@/lib/security';
 
 export async function POST(req: Request) {
-  const { paymentKey, orderId, amount } = await req.json();
+  const body = asRecord(await req.json());
+  const paymentKey = safeText(body.paymentKey, 200);
+  const orderId = safeTossOrderId(body.orderId);
+  const amount = Number(body.amount);
 
-  if (!paymentKey || !orderId || !amount) {
+  if (!paymentKey || !orderId || !Number.isFinite(amount)) {
     return NextResponse.json({ message: '결제 승인 정보가 부족해요.' }, { status: 400 });
   }
   if (!process.env.TOSS_SECRET_KEY) {

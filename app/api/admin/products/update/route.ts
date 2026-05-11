@@ -1,39 +1,46 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
+import { asRecord, safeCuid, safeInt, safeOptionalText, safeProductCategory, safeText, safeUrl } from '@/lib/security';
+
+const fallbackImage = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=900&auto=format&fit=crop&q=80';
 
 export async function PATCH(req: Request) {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ message: '관리자만 가능합니다.' }, { status: 403 });
 
-  const body = await req.json();
-  const productId = String(body.productId || '');
+  const body = asRecord(await req.json());
+  const productId = safeCuid(body.productId);
   if (!productId) return NextResponse.json({ message: '상품 ID가 필요해요.' }, { status: 400 });
 
-  const price = Number(body.price);
-  const stock = Number(body.stock);
-  if (!body.name || !body.category || !body.description) {
+  const name = safeText(body.name, 80);
+  const category = safeProductCategory(body.category);
+  const description = safeText(body.description, 1000);
+  const price = safeInt(body.price, -1, 0, 10_000_000);
+  const stock = safeInt(body.stock, -1, 0, 100_000);
+  const sortOrder = safeInt(body.sortOrder || 0, 0, -100_000, 100_000);
+  if (!name || !category || !description) {
     return NextResponse.json({ message: '상품명, 카테고리, 설명을 입력해주세요.' }, { status: 400 });
   }
-  if (!Number.isFinite(price) || price < 0) {
+  if (price < 0) {
     return NextResponse.json({ message: '판매가를 확인해주세요.' }, { status: 400 });
   }
-  if (!Number.isFinite(stock) || stock < 0) {
+  if (stock < 0) {
     return NextResponse.json({ message: '재고를 확인해주세요.' }, { status: 400 });
   }
 
   const product = await prisma.product.update({
     where: { id: productId },
     data: {
-      name: String(body.name),
-      category: String(body.category),
-      description: String(body.description),
+      name,
+      category,
+      description,
       price,
       stock,
-      image: body.image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=900&auto=format&fit=crop&q=80',
-      badge: body.badge ? String(body.badge) : null,
+      image: safeUrl(body.image, fallbackImage),
+      badge: safeOptionalText(body.badge, 30),
       isFarmerPick: Boolean(body.isFarmerPick),
-      sortOrder: Number(body.sortOrder || 0),
+      sortOrder,
     },
   });
   await prisma.adminAuditLog.create({

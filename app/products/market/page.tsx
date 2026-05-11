@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { won } from '@/lib/format';
+import { productCategories, safeProductCategory, safeProductSort, safeText } from '@/lib/security';
 import { ProductImage } from '@/components/ProductImage';
 import { BadgeCheck, Search, SlidersHorizontal, Truck, X } from 'lucide-react';
 
@@ -8,14 +9,9 @@ export const dynamic = 'force-dynamic';
 
 const categories = [
   { label: '전체', value: '' },
-  { label: '유기농', value: '유기농' },
-  { label: '과일', value: '과일' },
-  { label: '채소', value: '채소' },
-  { label: '수산', value: '수산물' },
-  { label: '간식', value: '간식' },
-  { label: '유제품', value: '유제품' },
-  { label: '음료', value: '음료' },
-  { label: '반찬', value: '반찬' },
+  ...productCategories
+    .filter((category) => category !== '생활용품')
+    .map((category) => ({ label: category === '수산물' ? '수산' : category, value: category })),
 ];
 
 export default async function ProductList({
@@ -24,9 +20,9 @@ export default async function ProductList({
   searchParams: Promise<{ category?: string; sort?: string; q?: string }>;
 }) {
   const params = await searchParams;
-  const category = params.category || '';
-  const sort = params.sort || 'new';
-  const q = (params.q || '').trim();
+  const category = safeProductCategory(params.category);
+  const sort = safeProductSort(params.sort);
+  const q = safeText(params.q, 50);
   const orderBy =
     sort === 'price-low'
       ? { price: 'asc' as const }
