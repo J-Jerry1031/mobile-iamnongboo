@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { asRecord, safeText, safeTossOrderId } from '@/lib/security';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
+  const limited = await rateLimit('toss-confirm', 30, 60_000);
+  if (limited) return limited;
+
   const body = asRecord(await req.json());
   const paymentKey = safeText(body.paymentKey, 200);
   const orderId = safeTossOrderId(body.orderId);

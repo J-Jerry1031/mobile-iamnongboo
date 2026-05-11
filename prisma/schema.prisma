@@ -46,6 +46,7 @@ model User {
   pointLogs PointLog[]
   auditLogs AdminAuditLog[]
   deliveryAddresses DeliveryAddress[]
+  privacyAccessLogs PrivacyAccessLog[]
 }
 
 model Product {
@@ -133,6 +134,19 @@ model AdminAuditLog {
   targetType String
   targetId   String?
   summary    String
+  createdAt  DateTime @default(now())
+}
+
+model PrivacyAccessLog {
+  id         String   @id @default(cuid())
+  adminId    String?
+  admin      User?    @relation(fields: [adminId], references: [id])
+  action     String
+  targetType String
+  targetId   String?
+  summary    String
+  ip         String?
+  userAgent  String?
   createdAt  DateTime @default(now())
 }
 

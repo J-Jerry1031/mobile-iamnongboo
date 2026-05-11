@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation';
 import { requireAdmin } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
 import { won } from '@/lib/format';
-import { formatPhone } from '@/lib/phone';
+import { maskAddress, maskPhone } from '@/lib/privacy';
+import { writePrivacyAccessLog } from '@/lib/privacy-audit';
 import { AdminOrderButtons } from '@/components/AdminOrderButtons';
 import { Clock3, PackageCheck, Phone, UserRound } from 'lucide-react';
 import { orderStatusLabel } from '@/lib/order-status';
@@ -13,6 +14,12 @@ export default async function AdminOrdersPage() {
   if (!admin) redirect('/login?next=/admin/orders&reason=protected');
 
   const orders = await prisma.order.findMany({ orderBy: { createdAt: 'desc' }, include: { items: true, user: true } });
+  await writePrivacyAccessLog({
+    adminId: admin.id,
+    action: 'ORDER_LIST_VIEW',
+    targetType: 'ORDER',
+    summary: `관리자 주문 목록 조회 ${orders.length}건`,
+  });
   const todayCount = orders.filter((order) => order.createdAt.toDateString() === new Date().toDateString()).length;
   const paidCount = orders.filter((order) => order.status === 'PAID').length;
   const requestCount = orders.filter((order) => ['CANCEL_REQUESTED', 'RETURN_REQUESTED'].includes(order.status)).length;
@@ -55,8 +62,8 @@ export default async function AdminOrdersPage() {
 
             <div className="mt-4 grid gap-2 rounded-2xl bg-[#fffaf0] p-3 text-[#5b5141]">
               <p className="flex items-center gap-2"><UserRound size={15} className="text-[#668f6b]" /> {order.buyerName}</p>
-              <p className="flex items-center gap-2"><Phone size={15} className="text-[#668f6b]" /> {formatPhone(order.buyerPhone)}</p>
-              {order.address && <p className="text-xs font-bold leading-5 text-[#7a6b4d]">{order.address}</p>}
+              <p className="flex items-center gap-2"><Phone size={15} className="text-[#668f6b]" /> {maskPhone(order.buyerPhone)}</p>
+              {order.address && <p className="text-xs font-bold leading-5 text-[#7a6b4d]">{maskAddress(order.address)}</p>}
             </div>
 
             <div className="mt-3 space-y-2">

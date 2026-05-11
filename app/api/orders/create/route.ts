@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { notifyAdmin } from '@/lib/notify';
 import { normalizePhone } from '@/lib/phone';
 import { asRecord, safeCuid, safeText, safeTossOrderId } from '@/lib/security';
+import { rateLimit } from '@/lib/rate-limit';
 
 type IncomingCartItem = {
   id: string;
@@ -11,6 +12,9 @@ type IncomingCartItem = {
 };
 
 export async function POST(req: Request) {
+  const limited = await rateLimit('order-create', 20, 60_000);
+  if (limited) return limited;
+
   const user = await getCurrentUser();
   const body = asRecord(await req.json());
   const { items, buyerName, buyerPhone, address, deliveryMethod, tossOrderId } = body as {

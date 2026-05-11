@@ -1,10 +1,18 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/auth-lite';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ message: '프로덕션에서는 seed API를 사용할 수 없어요.' }, { status: 404 });
+  }
+
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ message: '관리자만 가능합니다.' }, { status: 403 });
+
   try {
     await prisma.user.upsert({
       where: { email: 'admin@iamnongbu.local' },

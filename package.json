@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "security:sql": "node scripts/check-sql-injection-guards.mjs",
+    "security:baseline": "node scripts/check-security-baseline.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {

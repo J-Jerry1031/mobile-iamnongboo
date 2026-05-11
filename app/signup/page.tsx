@@ -61,7 +61,7 @@ export default function SignupPage() {
         </label>
         <label className="block">
           <span className="mb-2 block text-xs font-black text-[#7a6b4d]">비밀번호</span>
-          <input name="password" type="password" placeholder="8자 이상" className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
+          <input name="password" type="password" placeholder="영문+숫자 8자 이상" className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
         </label>
       </section>
 

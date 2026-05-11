@@ -80,6 +80,9 @@ export default async function AdminSystemPage() {
         <div className="mt-4 space-y-3 text-sm leading-6 text-[#5b5141]">
           <p>브라우저에는 `NEXT_PUBLIC_*` 값만 노출됩니다. `DATABASE_URL`, `DIRECT_URL`, `TOSS_SECRET_KEY`, `AUTH_SECRET`은 서버 환경변수에만 두세요.</p>
           <p>Supabase 테이블은 RLS를 켜고, 관리자 쓰기는 지금처럼 서버 API에서 권한 체크를 거치는 구조를 유지하는 것이 좋습니다.</p>
+          <p>회원/주문 목록은 기본적으로 연락처와 주소를 마스킹하고, 상세 확인이 필요한 화면에서만 전체 정보를 다루는 방향으로 운영하세요.</p>
+          <p>회원/주문 개인정보 조회는 `/admin/privacy-logs`에 기록됩니다. 관리자 계정 공유는 피하고 개인별 계정을 쓰세요.</p>
+          <p>로그인, 회원가입, 주문, 배송지 변경 API에는 요청 제한이 적용되어 반복 공격을 줄입니다.</p>
           <p>Vercel Production, Preview, Local 환경변수 값이 서로 맞는지 오픈 전 한 번 더 확인해주세요.</p>
           <p>`ADMIN_NOTIFY_WEBHOOK_URL`을 설정하면 새 주문과 새 문의가 들어올 때 관리자 알림을 받을 수 있습니다.</p>
         </div>

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { requireAdmin } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
-import { ChevronRight, ClipboardCheck, MessageCircle, PackageCheck, ShoppingBag, UsersRound } from 'lucide-react';
+import { ChevronRight, ClipboardCheck, Eye, MessageCircle, PackageCheck, ShoppingBag, UsersRound } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
@@ -11,12 +11,13 @@ export default async function AdminPage() {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const [todayOrders, requestOrders, openInquiries, soldOutProducts, userCount] = await Promise.all([
+  const [todayOrders, requestOrders, openInquiries, soldOutProducts, userCount, privacyLogCount] = await Promise.all([
     prisma.order.count({ where: { createdAt: { gte: today } } }),
     prisma.order.count({ where: { status: { in: ['CANCEL_REQUESTED', 'RETURN_REQUESTED'] } } }),
     prisma.inquiry.count({ where: { status: 'OPEN' } }),
     prisma.product.count({ where: { stock: { lte: 0 } } }),
     prisma.user.count(),
+    prisma.privacyAccessLog.count(),
   ]);
   const auditCount = await prisma.adminAuditLog.count();
 
@@ -27,6 +28,7 @@ export default async function AdminPage() {
     { label: '품절 상품', value: soldOutProducts, href: '/admin/products', icon: ShoppingBag },
     { label: '회원', value: userCount, href: '/admin/members', icon: UsersRound },
     { label: '작업 로그', value: auditCount, href: '/admin/audit', icon: ClipboardCheck },
+    { label: '개인정보 조회 로그', value: privacyLogCount, href: '/admin/privacy-logs', icon: Eye },
   ];
 
   return (
@@ -56,6 +58,7 @@ export default async function AdminPage() {
           ['문의 답변', '/admin/inquiries'],
           ['결제 리허설', '/admin/rehearsal'],
           ['작업 로그', '/admin/audit'],
+          ['개인정보 조회 로그', '/admin/privacy-logs'],
           ['오픈 체크리스트', '/admin/system'],
         ].map(([label, href]) => (
           <Link key={href} href={href} className="flex items-center justify-between rounded-2xl bg-white p-4 font-black text-[#1f2a24]">

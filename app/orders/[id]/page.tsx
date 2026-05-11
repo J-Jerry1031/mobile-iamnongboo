@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
 import { won } from '@/lib/format';
+import { writePrivacyAccessLog } from '@/lib/privacy-audit';
 import { OrderActionButtons } from '@/components/OrderActionButtons';
 import { orderStatusLabel, reviewableStatuses } from '@/lib/order-status';
 import {
@@ -26,6 +27,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
   if (!order) notFound();
   if (user.role !== 'ADMIN' && order.userId !== user.id) redirect('/orders');
+  if (user.role === 'ADMIN') {
+    await writePrivacyAccessLog({
+      adminId: user.id,
+      action: 'ORDER_DETAIL_VIEW',
+      targetType: 'ORDER',
+      targetId: order.id,
+      summary: `${order.orderNo} 주문 상세 조회`,
+    });
+  }
 
   const productIds = order.items.map((item) => item.productId);
   const products = await prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, image: true } });

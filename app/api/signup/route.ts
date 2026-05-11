@@ -4,8 +4,12 @@ import { prisma } from '@/lib/prisma';
 import { setAuthCookies } from '@/lib/auth-lite';
 import { normalizePhone } from '@/lib/phone';
 import { asRecord, safeText } from '@/lib/security';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
+  const limited = await rateLimit('signup', 5, 60_000);
+  if (limited) return limited;
+
   const body = asRecord(await req.json());
   const { name, email, phone, password, zonecode, address, addressDetail } = body;
   const normalizedEmail = safeText(email, 254).toLowerCase();
@@ -27,6 +31,9 @@ export async function POST(req: Request) {
   }
   if (rawPassword.length < 8) {
     return NextResponse.json({ message: '비밀번호는 8자 이상 입력해주세요.' }, { status: 400 });
+  }
+  if (!/[A-Za-z]/.test(rawPassword) || !/\d/.test(rawPassword)) {
+    return NextResponse.json({ message: '비밀번호에는 영문과 숫자를 함께 넣어주세요.' }, { status: 400 });
   }
   if (trimmedAddress && !normalizedPhone) {
     return NextResponse.json({ message: '기본 배송지를 등록하려면 연락처를 입력해주세요.' }, { status: 400 });

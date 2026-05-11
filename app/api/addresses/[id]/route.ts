@@ -3,8 +3,12 @@ import { getCurrentUser } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
 import { normalizePhone } from '@/lib/phone';
 import { asRecord, safeCuid, safeText } from '@/lib/security';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
+  const limited = await rateLimit('address-write', 30, 60_000);
+  if (limited) return limited;
+
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ message: '로그인이 필요해요.' }, { status: 401 });
 
@@ -60,6 +64,9 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
 }
 
 export async function DELETE(_req: Request, context: { params: Promise<{ id: string }> }) {
+  const limited = await rateLimit('address-write', 30, 60_000);
+  if (limited) return limited;
+
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ message: '로그인이 필요해요.' }, { status: 401 });
 

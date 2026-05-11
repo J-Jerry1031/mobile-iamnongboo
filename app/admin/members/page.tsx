@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation';
 import { requireAdmin } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
 import { won } from '@/lib/format';
-import { formatPhone } from '@/lib/phone';
+import { maskEmail, maskPhone } from '@/lib/privacy';
+import { writePrivacyAccessLog } from '@/lib/privacy-audit';
 import { Mail, Phone, ReceiptText, Star, UserRound } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,12 @@ export default async function AdminMembersPage() {
       reviews: { select: { id: true } },
       inquiries: { select: { id: true, status: true } },
     },
+  });
+  await writePrivacyAccessLog({
+    adminId: admin.id,
+    action: 'MEMBER_LIST_VIEW',
+    targetType: 'USER',
+    summary: `관리자 회원 목록 조회 ${users.length}명`,
   });
 
   return (
@@ -45,8 +52,8 @@ export default async function AdminMembersPage() {
                     <p className="font-black text-[#1f2a24]">{user.name}</p>
                     <span className="rounded-full bg-[#fcfbf6] px-2 py-1 text-[10px] font-black text-[#214b36]">{user.role}</span>
                   </div>
-                  <p className="mt-1 flex items-center gap-1 truncate text-xs text-[#7a6b4d]"><Mail size={13} /> {user.email}</p>
-                  <p className="mt-1 flex items-center gap-1 text-xs text-[#7a6b4d]"><Phone size={13} /> {user.phone ? formatPhone(user.phone) : '연락처 미등록'}</p>
+                  <p className="mt-1 flex items-center gap-1 truncate text-xs text-[#7a6b4d]"><Mail size={13} /> {maskEmail(user.email)}</p>
+                  <p className="mt-1 flex items-center gap-1 text-xs text-[#7a6b4d]"><Phone size={13} /> {maskPhone(user.phone)}</p>
                 </div>
               </div>
 
