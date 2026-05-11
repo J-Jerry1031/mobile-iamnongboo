@@ -6,6 +6,7 @@ import { won } from '@/lib/format';
 import { AddToCartButton } from '@/components/AddToCartButton';
 import { ProductImage } from '@/components/ProductImage';
 import { RestockAlertForm } from '@/components/RestockAlertForm';
+import { ReviewHelpfulButton } from '@/components/ReviewHelpfulButton';
 import {
   BadgeCheck,
   ChevronLeft,
@@ -47,7 +48,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = await prisma.product.findUnique({ where: { id }, include: { reviews: { orderBy: { createdAt: 'desc' } } } });
+  const product = await prisma.product.findUnique({
+    where: { id },
+    include: {
+      reviews: {
+        where: { isHidden: false },
+        orderBy: { createdAt: 'desc' },
+        include: { user: { select: { name: true } } },
+      },
+    },
+  });
   if (!product) notFound();
   const averageRating = product.reviews.length
   ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
@@ -59,7 +69,9 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
 
   const deliveryFee = product.price >= 30000 ? 0 : 3000;
   const couponPrice = Math.max(0, product.price - 3000);
-  const expectedDelivery = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' }).format(new Date(Date.now() + 24 * 60 * 60 * 1000));
+  const expectedDeliveryDate = new Date();
+  expectedDeliveryDate.setDate(expectedDeliveryDate.getDate() + 1);
+  const expectedDelivery = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' }).format(expectedDeliveryDate);
   const producerNote = product.category === '수산물'
     ? '입고일 기준 선도와 냉장/냉동 상태를 확인한 상품만 판매합니다.'
     : '국내 산지와 협력해 당일 상태가 좋은 상품을 우선 선별합니다.';
@@ -68,9 +80,43 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
     : product.category === '과일'
       ? '직사광선을 피하고, 상품 상태에 따라 냉장 보관하면 더 오래 즐길 수 있어요.'
       : '수령 후 밀봉해 냉장 보관하고 가능한 빠르게 드시는 것을 권장합니다.';
+  const productInfoRows = [
+    ['카테고리', product.category],
+    ['원산지', product.origin || '국내 산지'],
+    ['중량/용량', product.weight || '상품별 상세 표기'],
+    ['보관방법', product.storage || (product.category === '수산물' ? '냉동/냉장 보관' : '냉장 보관 권장')],
+    ['소비기한', product.expiration || '수령 후 빠른 섭취 권장'],
+    ['알레르기/주의사항', product.allergy || '상세 설명 및 포장 라벨 확인'],
+    ['출고상태', product.stock > 0 && product.isActive ? '주문 가능' : '품절'],
+  ];
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    image: [product.image, product.detailImage].filter(Boolean),
+    description: product.description,
+    brand: { '@type': 'Brand', name: '아이엠농부' },
+    offers: {
+      '@type': 'Offer',
+      price: product.price,
+      priceCurrency: 'KRW',
+      availability: product.stock > 0 && product.isActive ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      url: `${process.env.NEXT_PUBLIC_BASE_URL || ''}/products/${product.id}`,
+    },
+    ...(product.reviews.length
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: Number(averageRating.toFixed(1)),
+            reviewCount: product.reviews.length,
+          },
+        }
+      : {}),
+  };
 
   return (
     <div className="pb-44">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="px-5 pt-3">
         <Link href="/products/market" className="mb-3 inline-flex items-center gap-1 text-sm font-black text-[#214b36]">
           <ChevronLeft size={18} /> 상품 목록
@@ -140,12 +186,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
           <Leaf size={20} className="text-[#668f6b]" /> 상품정보
         </h2>
         <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-          {[
-            ['카테고리', product.category],
-            ['원산지', '국내 산지'],
-            ['보관방법', product.category === '수산물' ? '냉동/냉장 보관' : '냉장 보관 권장'],
-            ['출고상태', product.stock > 0 && product.isActive ? '주문 가능' : '품절'],
-          ].map(([label, value]) => (
+          {productInfoRows.map(([label, value]) => (
             <div key={label} className="rounded-2xl bg-[#fcfbf6] p-4">
               <p className="text-xs font-bold text-[#7a6b4d]">{label}</p>
               <p className="mt-2 font-black text-[#1f2a24]">{value}</p>
@@ -155,6 +196,13 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
         <div className="mt-4 rounded-2xl bg-[#e5f0dc] p-4 text-sm leading-6 text-[#214b36]">
           아이엠농부는 상품 입고 상태를 확인한 뒤 포장하며, 신선도 이상이 확인되면 출고 전 연락드립니다.
         </div>
+        {(product.detailImage || product.image) && (
+          <img
+            src={product.detailImage || product.image}
+            alt={`${product.name} 상세 이미지`}
+            className="mt-4 w-full rounded-2xl object-cover"
+          />
+        )}
       </section>
 
       <section className="mx-5 mt-4 rounded-3xl bg-white p-5 shadow-sm">
@@ -257,7 +305,17 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
           </div>
         </div>
         <div className="mt-4 space-y-3">
-          {product.reviews.map((r) => <div key={r.id} className="rounded-3xl bg-white p-4 text-sm leading-6"><p>{'⭐'.repeat(r.rating)}</p><p className="mt-2">{r.content}</p></div>)}
+          {product.reviews.map((r) => (
+            <div key={r.id} className="rounded-3xl bg-white p-4 text-sm leading-6">
+              <div className="flex items-center justify-between gap-3">
+                <p>{'⭐'.repeat(r.rating)}</p>
+                <p className="text-xs font-bold text-[#7a6b4d]">{r.user?.name || '구매 고객'}</p>
+              </div>
+              {r.photoUrl && <img src={r.photoUrl} alt="후기 사진" className="mt-3 aspect-square w-28 rounded-2xl object-cover" />}
+              <p className="mt-2">{r.content}</p>
+              <ReviewHelpfulButton reviewId={r.id} initialCount={r.helpfulCount} />
+            </div>
+          ))}
           {!product.reviews.length && <p className="rounded-3xl bg-white p-4 text-sm text-[#7a6b4d]">아직 후기가 없어요.</p>}
         </div>
       </section>

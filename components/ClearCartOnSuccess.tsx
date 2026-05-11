@@ -7,7 +7,7 @@ export function ClearCartOnSuccess() {
   const clear = useCart((s) => s.clear);
 
   useEffect(() => {
-    clear();
+    queueMicrotask(() => clear());
   }, [clear]);
 
   return null;

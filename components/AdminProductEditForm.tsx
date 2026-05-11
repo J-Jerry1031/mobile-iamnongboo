@@ -11,6 +11,12 @@ type AdminProduct = {
   description: string;
   price: number;
   image: string;
+  detailImage: string | null;
+  origin: string | null;
+  weight: string | null;
+  storage: string | null;
+  expiration: string | null;
+  allergy: string | null;
   badge: string | null;
   stock: number;
   isActive: boolean;
@@ -26,7 +32,7 @@ export function AdminProductEditForm({ product }: { product: AdminProduct }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (searchParams.get('edit') === product.id) setOpen(true);
+    if (searchParams.get('edit') === product.id) queueMicrotask(() => setOpen(true));
   }, [product.id, searchParams]);
 
   async function submit(formData: FormData) {
@@ -73,6 +79,14 @@ export function AdminProductEditForm({ product }: { product: AdminProduct }) {
           <input name="badge" defaultValue={product.badge || ''} placeholder="뱃지" className="w-full rounded-xl bg-white p-3 text-sm" />
           <input name="sortOrder" type="number" defaultValue={product.sortOrder} placeholder="정렬 순서" className="w-full rounded-xl bg-white p-3 text-sm" />
           <input name="image" defaultValue={product.image} placeholder="이미지 URL" className="w-full rounded-xl bg-white p-3 text-sm" />
+          <input name="detailImage" defaultValue={product.detailImage || ''} placeholder="상세 이미지 URL" className="w-full rounded-xl bg-white p-3 text-sm" />
+          <div className="grid grid-cols-2 gap-2">
+            <input name="origin" defaultValue={product.origin || ''} placeholder="원산지" className="min-w-0 rounded-xl bg-white p-3 text-sm" />
+            <input name="weight" defaultValue={product.weight || ''} placeholder="중량/용량" className="min-w-0 rounded-xl bg-white p-3 text-sm" />
+            <input name="storage" defaultValue={product.storage || ''} placeholder="보관방법" className="min-w-0 rounded-xl bg-white p-3 text-sm" />
+            <input name="expiration" defaultValue={product.expiration || ''} placeholder="소비기한" className="min-w-0 rounded-xl bg-white p-3 text-sm" />
+          </div>
+          <input name="allergy" defaultValue={product.allergy || ''} placeholder="알레르기/주의사항" className="w-full rounded-xl bg-white p-3 text-sm" />
           <textarea name="description" defaultValue={product.description} className="min-h-24 w-full rounded-xl bg-white p-3 text-sm" />
           <label className="flex items-center gap-2 text-sm font-black text-[#214b36]">
             <input name="isFarmerPick" type="checkbox" value="true" defaultChecked={product.isFarmerPick} className="h-4 w-4 accent-[#214b36]" />

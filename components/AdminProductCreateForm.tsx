@@ -109,6 +109,17 @@ export function AdminProductCreateForm() {
             className="w-full rounded-2xl bg-[#fffaf0] p-4"
           />
 
+          <input name="detailImage" placeholder="상세 이미지 URL" className="w-full rounded-2xl bg-[#fffaf0] p-4" />
+
+          <div className="grid grid-cols-2 gap-2">
+            <input name="origin" placeholder="원산지" className="min-w-0 rounded-2xl bg-[#fffaf0] p-4" />
+            <input name="weight" placeholder="중량/용량" className="min-w-0 rounded-2xl bg-[#fffaf0] p-4" />
+            <input name="storage" placeholder="보관방법" className="min-w-0 rounded-2xl bg-[#fffaf0] p-4" />
+            <input name="expiration" placeholder="소비기한" className="min-w-0 rounded-2xl bg-[#fffaf0] p-4" />
+          </div>
+
+          <input name="allergy" placeholder="알레르기/주의사항" className="w-full rounded-2xl bg-[#fffaf0] p-4" />
+
           <textarea name="description" placeholder="상품 설명" className="min-h-28 w-full rounded-2xl bg-[#fffaf0] p-4" />
 
           <button className="w-full rounded-2xl bg-[#f5d87a] py-3 font-black text-[#214b36]">

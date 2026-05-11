@@ -34,3 +34,26 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Admin notifications
+
+Set one provider in Vercel environment variables.
+
+```bash
+# Slack-compatible webhook, default
+ADMIN_NOTIFY_PROVIDER=slack
+ADMIN_NOTIFY_WEBHOOK_URL=https://...
+
+# Discord incoming webhook
+ADMIN_NOTIFY_PROVIDER=discord
+ADMIN_NOTIFY_WEBHOOK_URL=https://discord.com/api/webhooks/...
+
+# Telegram bot message
+ADMIN_NOTIFY_PROVIDER=telegram
+ADMIN_NOTIFY_TELEGRAM_BOT_TOKEN=123456:...
+ADMIN_NOTIFY_TELEGRAM_CHAT_ID=123456789
+
+# ntfy mobile push
+ADMIN_NOTIFY_PROVIDER=ntfy
+ADMIN_NOTIFY_NTFY_TOPIC=iamnongbu-random-private-topic
+```

@@ -2,18 +2,21 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth-lite';
 import { reviewableStatuses } from '@/lib/order-status';
+import type { OrderStatus } from '@prisma/client';
 import Link from 'next/link';
 import { ChevronLeft, Gift, Star } from 'lucide-react';
+import { safeCuid, safeInt, safeText, safeUrl } from '@/lib/security';
 
 const REVIEW_POINT = 100;
 
 async function createReview(formData: FormData) {
   'use server';
 
-  const productId = String(formData.get('productId') || '');
-  const orderId = String(formData.get('orderId') || '');
-  const rating = Number(formData.get('rating') || 5);
-  const content = String(formData.get('content') || '').trim();
+  const productId = safeCuid(formData.get('productId'));
+  const orderId = safeCuid(formData.get('orderId'));
+  const rating = safeInt(formData.get('rating'), 5, 1, 5);
+  const content = safeText(formData.get('content'), 1000);
+  const photoUrl = safeUrl(formData.get('photoUrl'), '');
 
   const user = await getCurrentUser();
 
@@ -25,7 +28,7 @@ async function createReview(formData: FormData) {
     where: {
       ...(orderId ? { id: orderId } : {}),
       userId: user.id,
-      status: { in: reviewableStatuses as any },
+      status: { in: reviewableStatuses as OrderStatus[] },
       items: { some: { productId } },
     },
   });
@@ -45,6 +48,8 @@ async function createReview(formData: FormData) {
       data: {
         rating,
         content,
+        photoUrl: photoUrl || null,
+        isHidden: false,
       },
     });
 
@@ -58,6 +63,7 @@ async function createReview(formData: FormData) {
         userId: user.id,
         rating,
         content,
+        photoUrl: photoUrl || null,
       },
     }),
 
@@ -161,6 +167,13 @@ export default async function ReviewsPage({
         defaultValue={existingReview?.content || ''}
         placeholder="신선도, 맛, 포장 상태 등 다른 고객에게 도움이 될 내용을 남겨주세요."
         className="mt-3 min-h-40 w-full rounded-2xl bg-white p-4 leading-6 outline-none focus:ring-2 focus:ring-[#668f6b]"
+      />
+
+      <input
+        name="photoUrl"
+        defaultValue={existingReview?.photoUrl || ''}
+        placeholder="후기 사진 URL (선택)"
+        className="mt-3 w-full rounded-2xl bg-white p-4 outline-none focus:ring-2 focus:ring-[#668f6b]"
       />
 
       <button className="mt-3 w-full rounded-2xl bg-[#214b36] py-4 font-black text-white active:scale-[.99]">

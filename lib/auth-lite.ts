@@ -5,6 +5,18 @@ import { prisma } from './prisma';
 const SESSION_COOKIE = 'imf_session';
 const LEGACY_COOKIE = 'imf_user_id';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
+type CookieOptions = {
+  httpOnly?: boolean;
+  sameSite?: 'lax' | 'strict' | 'none';
+  secure?: boolean;
+  path?: string;
+  maxAge?: number;
+};
+type CookieResponse = Response & {
+  cookies: {
+    set: (name: string, value: string, options?: CookieOptions) => void;
+  };
+};
 
 function getSessionSecret() {
   return process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || process.env.TOSS_SECRET_KEY || 'iamnongbu-local-dev-secret';
@@ -37,7 +49,7 @@ export function createSessionCookieValue(userId: string) {
   return `${payload}.${sign(payload)}`;
 }
 
-export function setAuthCookies(res: Response & { cookies: { set: (...args: any[]) => void } }, userId: string) {
+export function setAuthCookies(res: CookieResponse, userId: string) {
   const options = {
     httpOnly: true,
     sameSite: 'lax' as const,
@@ -50,7 +62,7 @@ export function setAuthCookies(res: Response & { cookies: { set: (...args: any[]
   res.cookies.set(LEGACY_COOKIE, '', { path: '/', maxAge: 0 });
 }
 
-export function clearAuthCookies(res: Response & { cookies: { set: (...args: any[]) => void } }) {
+export function clearAuthCookies(res: CookieResponse) {
   res.cookies.set(SESSION_COOKIE, '', { path: '/', maxAge: 0 });
   res.cookies.set(LEGACY_COOKIE, '', { path: '/', maxAge: 0 });
 }
