@@ -4,15 +4,33 @@ import Link from 'next/link';
 import { useCart } from '@/lib/cart-store';
 import { won } from '@/lib/format';
 import { BadgeCheck, ChevronRight, Gift, PackageCheck, ShieldCheck, ShoppingBag, Trash2, Truck } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+type RecommendedProduct = {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  badge: string | null;
+  stock: number;
+};
 
 export default function CartPage() {
-  const { items, inc, dec, remove, setQty } = useCart();
+  const { items, add, inc, dec, remove, setQty } = useCart();
+  const [recommended, setRecommended] = useState<RecommendedProduct[]>([]);
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const deliveryFee = subtotal === 0 || subtotal >= 30000 ? 0 : 3000;
   const total = subtotal + deliveryFee;
   const freeDeliveryTarget = 30000;
   const freeDeliveryRemain = Math.max(0, freeDeliveryTarget - subtotal);
   const freeDeliveryProgress = Math.min(100, Math.round((subtotal / freeDeliveryTarget) * 100));
+
+  useEffect(() => {
+    fetch('/api/products/recommendations')
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => setRecommended((data?.products || []).filter((product: RecommendedProduct) => !items.some((item) => item.id === product.id)).slice(0, 4)))
+      .catch(() => setRecommended([]));
+  }, [items]);
 
   return (
     <div className="px-5 pb-36 pt-5">
@@ -90,6 +108,34 @@ export default function CartPage() {
               {item.label}
             </div>
           ))}
+        </section>
+      )}
+
+      {items.length > 0 && recommended.length > 0 && (
+        <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="font-black text-[#1f2a24]">함께 담으면 좋아요</h2>
+            <Link href="/products/market" className="text-xs font-black text-[#214b36]">더보기</Link>
+          </div>
+          <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+            {recommended.map((product) => (
+              <div key={product.id} className="w-[132px] shrink-0 rounded-2xl bg-[#fffaf0] p-3">
+                <Link href={`/products/${product.id}`}>
+                  <img src={product.image} alt={product.name} className="h-20 w-full rounded-xl object-cover" />
+                  <p className="mt-2 line-clamp-2 min-h-[34px] text-xs font-black leading-[17px] text-[#1f2a24]">{product.name}</p>
+                  <p className="mt-1 text-sm font-black text-[#214b36]">{won(product.price)}</p>
+                </Link>
+                <button onClick={() => add({ id: product.id, name: product.name, price: product.price, image: product.image })} className="mt-2 w-full rounded-xl bg-[#214b36] py-2 text-xs font-black text-white">
+                  담기
+                </button>
+              </div>
+            ))}
+          </div>
+          {freeDeliveryRemain > 0 && (
+            <p className="mt-3 rounded-2xl bg-[#e5f0dc] p-3 text-xs font-black text-[#214b36]">
+              추천 상품을 담으면 무료배송까지 더 가까워져요.
+            </p>
+          )}
         </section>
       )}
 

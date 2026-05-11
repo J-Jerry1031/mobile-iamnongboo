@@ -52,8 +52,14 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   const averageRating = product.reviews.length
   ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
   : 0;
+  const ratingCounts = [5, 4, 3, 2, 1].map((rating) => ({
+    rating,
+    count: product.reviews.filter((review) => review.rating === rating).length,
+  }));
 
   const deliveryFee = product.price >= 30000 ? 0 : 3000;
+  const couponPrice = Math.max(0, product.price - 3000);
+  const expectedDelivery = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' }).format(new Date(Date.now() + 24 * 60 * 60 * 1000));
   const producerNote = product.category === '수산물'
     ? '입고일 기준 선도와 냉장/냉동 상태를 확인한 상품만 판매합니다.'
     : '국내 산지와 협력해 당일 상태가 좋은 상품을 우선 선별합니다.';
@@ -73,29 +79,54 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
       </div>
 
       <section className="px-5 pt-5">
-      {product.badge && <p className="inline-flex rounded-full bg-[#e5f0dc] px-3 py-1 text-xs font-black text-[#214b36]">{product.badge}</p>}
-      <h1 className="mt-3 text-[26px] font-black leading-tight text-[#1f2a24]">{product.name}</h1>
-      {product.reviews.length > 0 && (
-  <p className="mt-2 flex items-center gap-1 text-sm font-bold text-[#7a6b4d]">
-    <Star size={16} className="fill-[#f5d87a] text-[#f5d87a]" /> {averageRating.toFixed(1)} / 후기 {product.reviews.length}개
-  </p>
-)}
-      <p className="mt-2 text-2xl font-black text-[#214b36]">{won(product.price)}</p>
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        {[
-          { label: '산지직송', icon: Truck },
-          { label: '신선보장', icon: BadgeCheck },
-          { label: product.stock > 0 && product.isActive ? `재고 ${product.stock}` : '품절', icon: PackageCheck },
-        ].map(({ label, icon: Icon }) => (
-          <div key={label} className="rounded-2xl bg-white p-3 text-center text-[11px] font-black text-[#214b36]">
-            <Icon className="mx-auto mb-1 text-[#668f6b]" size={18} />
-            {label}
-          </div>
-        ))}
-      </div>
+        <div className="flex flex-wrap gap-2">
+          {product.badge && <p className="inline-flex rounded-full bg-[#e5f0dc] px-3 py-1 text-xs font-black text-[#214b36]">{product.badge}</p>}
+          <p className="inline-flex rounded-full bg-[#fffaf0] px-3 py-1 text-xs font-black text-[#668f6b]">WELCOME3000 쿠폰</p>
+        </div>
+        <h1 className="mt-3 text-[25px] font-black leading-[1.24] text-[#1f2a24]">{product.name}</h1>
+        <a href="#review-info" className="mt-2 flex items-center gap-1 text-sm font-bold text-[#7a6b4d]">
+          <Star size={16} className="fill-[#f5d87a] text-[#f5d87a]" />
+          {product.reviews.length ? `${averageRating.toFixed(1)} / 후기 ${product.reviews.length}개` : '첫 후기를 기다려요'}
+        </a>
 
-      <p className="mt-4 rounded-3xl bg-white p-5 text-sm leading-7 text-[#5b5141]">{product.description}</p>
-      {(!product.isActive || product.stock <= 0) && <RestockAlertForm productId={product.id} />}
+        <div className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-black text-[#7a6b4d]">쿠폰 적용가</p>
+              <p className="mt-1 text-[28px] font-black leading-none text-[#214b36]">{won(couponPrice)}</p>
+              <p className="mt-2 text-sm font-bold text-[#9b8d73] line-through">{won(product.price)}</p>
+            </div>
+            <span className="rounded-2xl bg-[#e5f0dc] px-3 py-2 text-xs font-black text-[#214b36]">
+              최대 {won(3000)} 할인
+            </span>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-[#5b5141]">
+            <div className="rounded-2xl bg-[#fcfbf6] p-3">
+              <p className="text-[#7a6b4d]">예상 수령</p>
+              <p className="mt-1 font-black text-[#1f2a24]">{expectedDelivery} 준비</p>
+            </div>
+            <div className="rounded-2xl bg-[#fcfbf6] p-3">
+              <p className="text-[#7a6b4d]">배송비</p>
+              <p className="mt-1 font-black text-[#1f2a24]">{deliveryFee ? `${won(deliveryFee)} · 3만원 무료` : '무료배송'}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          {[
+            { label: '산지직송', icon: Truck },
+            { label: '신선보장', icon: BadgeCheck },
+            { label: product.stock > 0 && product.isActive ? `재고 ${product.stock}` : '품절', icon: PackageCheck },
+          ].map(({ label, icon: Icon }) => (
+            <div key={label} className="rounded-2xl bg-white p-3 text-center text-[11px] font-black text-[#214b36]">
+              <Icon className="mx-auto mb-1 text-[#668f6b]" size={18} />
+              {label}
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-4 rounded-3xl bg-white p-5 text-[14px] leading-[1.7] text-[#5b5141]">{product.description}</p>
+        {(!product.isActive || product.stock <= 0) && <RestockAlertForm productId={product.id} />}
       </section>
 
       <nav className="mx-5 mt-5 grid grid-cols-3 rounded-2xl bg-white p-1 text-center text-sm font-black text-[#214b36] shadow-sm">
@@ -206,8 +237,27 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
           <h2 className="text-lg font-black">상품 후기</h2>
           <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-[#7a6b4d]">구매 후 작성</span>
         </div>
+        <div className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-[28px] font-black text-[#214b36]">{product.reviews.length ? averageRating.toFixed(1) : '0.0'}</p>
+              <p className="mt-1 text-xs font-bold text-[#7a6b4d]">후기 {product.reviews.length}개</p>
+            </div>
+            <div className="min-w-0 flex-1 space-y-2">
+              {ratingCounts.map((item) => (
+                <div key={item.rating} className="flex items-center gap-2 text-[11px] font-bold text-[#7a6b4d]">
+                  <span className="w-8">별 {item.rating}</span>
+                  <span className="h-2 flex-1 overflow-hidden rounded-full bg-[#f1ead9]">
+                    <span className="block h-full rounded-full bg-[#668f6b]" style={{ width: `${product.reviews.length ? Math.round((item.count / product.reviews.length) * 100) : 0}%` }} />
+                  </span>
+                  <span className="w-5 text-right">{item.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
         <div className="mt-4 space-y-3">
-          {product.reviews.map((r) => <div key={r.id} className="rounded-3xl bg-white p-4 text-sm"><p>{'⭐'.repeat(r.rating)}</p><p className="mt-2">{r.content}</p></div>)}
+          {product.reviews.map((r) => <div key={r.id} className="rounded-3xl bg-white p-4 text-sm leading-6"><p>{'⭐'.repeat(r.rating)}</p><p className="mt-2">{r.content}</p></div>)}
           {!product.reviews.length && <p className="rounded-3xl bg-white p-4 text-sm text-[#7a6b4d]">아직 후기가 없어요.</p>}
         </div>
       </section>

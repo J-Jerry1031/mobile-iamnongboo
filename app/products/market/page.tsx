@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { won } from '@/lib/format';
 import { productCategories, safeProductCategory, safeProductSort, safeText } from '@/lib/security';
 import { ProductImage } from '@/components/ProductImage';
-import { BadgeCheck, Search, SlidersHorizontal, Truck, X } from 'lucide-react';
+import { BadgeCheck, Leaf, Search, SlidersHorizontal, Star, TicketPercent, Truck, X } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,12 +17,15 @@ const categories = [
 export default async function ProductList({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; sort?: string; q?: string }>;
+  searchParams: Promise<{ category?: string; sort?: string; q?: string; free?: string; inStock?: string; pick?: string }>;
 }) {
   const params = await searchParams;
   const category = safeProductCategory(params.category);
   const sort = safeProductSort(params.sort);
   const q = safeText(params.q, 50);
+  const freeOnly = params.free === '1';
+  const inStockOnly = params.inStock === '1';
+  const pickOnly = params.pick === '1';
   const orderBy =
     sort === 'price-low'
       ? { price: 'asc' as const }
@@ -33,6 +36,9 @@ export default async function ProductList({
   const products = await prisma.product.findMany({
     where: {
       isActive: true,
+      ...(freeOnly ? { price: { gte: 30000 } } : {}),
+      ...(inStockOnly ? { stock: { gt: 0 } } : {}),
+      ...(pickOnly ? { isFarmerPick: true } : {}),
       ...(category ? { category } : {}),
       ...(q
         ? {
@@ -46,16 +52,25 @@ export default async function ProductList({
         : {}),
     },
     orderBy,
+    include: {
+      reviews: { select: { rating: true } },
+    },
   });
 
-  const buildHref = (next: { category?: string; sort?: string; q?: string }) => {
+  const buildHref = (next: { category?: string; sort?: string; q?: string; free?: boolean; inStock?: boolean; pick?: boolean }) => {
     const nextCategory = next.category ?? category;
     const nextSort = next.sort ?? sort;
     const nextQ = next.q ?? q;
+    const nextFree = next.free ?? freeOnly;
+    const nextInStock = next.inStock ?? inStockOnly;
+    const nextPick = next.pick ?? pickOnly;
     const query = new URLSearchParams();
     if (nextCategory) query.set('category', nextCategory);
     if (nextQ) query.set('q', nextQ);
     if (nextSort && nextSort !== 'new') query.set('sort', nextSort);
+    if (nextFree) query.set('free', '1');
+    if (nextInStock) query.set('inStock', '1');
+    if (nextPick) query.set('pick', '1');
     const qs = query.toString();
     return qs ? `/products/market?${qs}` : '/products/market';
   };
@@ -146,13 +161,25 @@ export default async function ProductList({
         </div>
       </div>
 
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {[
+          { label: '무료배송', active: freeOnly, href: buildHref({ free: !freeOnly }) },
+          { label: '품절 제외', active: inStockOnly, href: buildHref({ inStock: !inStockOnly }) },
+          { label: '농부추천', active: pickOnly, href: buildHref({ pick: !pickOnly }) },
+        ].map((filter) => (
+          <Link key={filter.label} href={filter.href} className={`rounded-2xl px-3 py-3 text-center text-xs font-black ${filter.active ? 'bg-[#214b36] text-white' : 'bg-white text-[#214b36]'}`}>
+            {filter.label}
+          </Link>
+        ))}
+      </div>
+
       <div className="mt-5 grid grid-cols-2 gap-4">
-        {products.map((p) => (
-          <Link
-            key={p.id}
-            href={`/products/${p.id}`}
-            className="block rounded-3xl bg-white p-3 shadow-sm active:scale-[.99]"
-          >
+        {products.map((p) => {
+          const reviewCount = p.reviews.length;
+          const averageRating = reviewCount ? p.reviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount : 0;
+          const couponPrice = Math.max(0, p.price - 3000);
+          return (
+          <Link key={p.id} href={`/products/${p.id}`} className="block rounded-3xl bg-white p-3 shadow-sm active:scale-[.99]">
             <div className="relative">
               <ProductImage src={p.image} name={p.name} />
               {p.stock <= 0 && (
@@ -166,23 +193,34 @@ export default async function ProductList({
                 </p>
               )}
             </div>
-            <p className="mt-2 text-sm font-black">{p.name}</p>
+            <div className="mt-2 flex items-center gap-1 text-[10px] font-black text-[#668f6b]">
+              {p.isFarmerPick && <span className="inline-flex items-center gap-1 rounded-full bg-[#e5f0dc] px-2 py-1"><Leaf size={11} /> 추천</span>}
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#fffaf0] px-2 py-1"><TicketPercent size={11} /> 쿠폰</span>
+            </div>
+            <p className="mt-2 text-[15px] font-black leading-snug">{p.name}</p>
             <p className="mt-1 line-clamp-2 min-h-[34px] text-[11px] leading-[17px] text-[#7a6b4d]">
               {p.description}
             </p>
-            <p className="mt-1 text-sm font-bold text-[#214b36]">
+            <p className="mt-2 text-[11px] font-bold text-[#9b8d73] line-through">
               {won(p.price)}
             </p>
+            <p className="text-base font-black text-[#214b36]">
+              {won(couponPrice)} <span className="text-[10px] text-[#668f6b]">쿠폰가</span>
+            </p>
+            <div className="mt-2 flex items-center gap-1 text-[11px] font-bold text-[#7a6b4d]">
+              <Star size={13} className="fill-[#f5d87a] text-[#f5d87a]" />
+              {reviewCount ? `${averageRating.toFixed(1)} · 후기 ${reviewCount}` : '첫 후기를 기다려요'}
+            </div>
             <div className="mt-3 flex items-center justify-between text-[10px] font-bold text-[#668f6b]">
               <span className="flex items-center gap-1">
-                <Truck size={13} /> 산지직송
+                <Truck size={13} /> 내일 준비
               </span>
               <span className="flex items-center gap-1">
-                <BadgeCheck size={13} /> {p.stock > 0 ? '신선보장' : '입고대기'}
+                <BadgeCheck size={13} /> {p.stock > 0 ? `재고 ${p.stock}` : '입고대기'}
               </span>
             </div>
           </Link>
-        ))}
+        )})}
       </div>
 
       {!products.length && (

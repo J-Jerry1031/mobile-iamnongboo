@@ -414,9 +414,13 @@ export function CheckoutClient() {
       </div>
 
       <div className="fixed bottom-[calc(73px+env(safe-area-inset-bottom))] left-1/2 z-[35] w-full max-w-[430px] -translate-x-1/2 border-t border-[#eadfce] bg-white/95 px-5 py-3 shadow-[0_-12px_28px_rgba(31,42,36,.1)] backdrop-blur">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 rounded-2xl bg-[#fcfbf6] px-3 py-2 text-[11px] font-bold text-[#7a6b4d]">
+          <div className="flex justify-between"><span>상품 {won(subtotal)}</span><span>배송 {deliveryFee ? won(deliveryFee) : '무료'}</span></div>
+          {discountAmount > 0 && <div className="mt-1 flex justify-between text-[#214b36]"><span>{appliedCoupon?.name || '쿠폰할인'}</span><span>-{won(discountAmount)}</span></div>}
+        </div>
+        <div className="mb-3 flex items-end justify-between">
           <span className="text-sm font-bold text-[#7a6b4d]">결제 예정금액</span>
-          <span className="text-xl font-black text-[#214b36]">{won(total)}</span>
+          <span className="text-2xl font-black leading-none text-[#214b36]">{won(total)}</span>
         </div>
         <button disabled={loading || !canPay} onClick={pay} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#214b36] py-4 font-black text-white disabled:opacity-45 active:scale-[.99]">
           <CreditCard size={19} /> {loading ? '결제 준비 중...' : '결제하기'} <ChevronRight size={18} />
