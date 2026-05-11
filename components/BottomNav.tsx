@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Home, Leaf, Heart, UserRound } from 'lucide-react';
+import { Home, Leaf, Heart } from 'lucide-react';
+import { FullMenuDrawer } from '@/components/FullMenuDrawer';
 
 export function BottomNav() {
   const item =
@@ -22,10 +23,7 @@ export function BottomNav() {
         이야기
       </Link>
 
-      <Link className={item} href="/mypage">
-        <UserRound size={29} strokeWidth={1.7} />
-        마이페이지
-      </Link>
+      <FullMenuDrawer />
     </nav>
   );
 }

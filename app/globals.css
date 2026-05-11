@@ -15,6 +15,15 @@ a { -webkit-tap-highlight-color: transparent; }
   overflow: hidden;
 }
 
+@keyframes menuSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
 .mobile-shell {
   max-width: 430px;
   margin: 0 auto;
