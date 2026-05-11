@@ -8,6 +8,7 @@ import {
   ChevronRight,
   ClipboardList,
   Heart,
+  MapPin,
   MessageCircle,
   PackageCheck,
   ReceiptText,
@@ -53,6 +54,12 @@ export default async function MyPage() {
       description: `${reviewCount}개의 작성 후기가 있어요`,
       href: '/mypage/reviews',
       icon: Star,
+    },
+    {
+      title: '배송지 관리',
+      description: '자주 쓰는 배송지를 저장하고 기본 배송지를 설정해요',
+      href: '/mypage/addresses',
+      icon: MapPin,
     },
     {
       title: '문의 내역',

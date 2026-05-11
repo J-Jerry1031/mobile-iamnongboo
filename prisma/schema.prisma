@@ -45,6 +45,7 @@ model User {
   inquiries Inquiry[]
   pointLogs PointLog[]
   auditLogs AdminAuditLog[]
+  deliveryAddresses DeliveryAddress[]
 }
 
 model Product {
@@ -133,4 +134,18 @@ model AdminAuditLog {
   targetId   String?
   summary    String
   createdAt  DateTime @default(now())
+}
+
+model DeliveryAddress {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  label     String
+  recipient String
+  phone     String
+  zonecode  String?
+  address   String
+  detail    String?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

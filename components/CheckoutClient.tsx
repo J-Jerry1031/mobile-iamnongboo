@@ -3,15 +3,47 @@
 import { loadTossPayments } from '@tosspayments/tosspayments-sdk';
 import { useCart } from '@/lib/cart-store';
 import { won } from '@/lib/format';
-import { CheckCircle2, ChevronRight, CreditCard, MapPin, PackageCheck, ShieldCheck, ShoppingBag, Store, Truck } from 'lucide-react';
+import { KakaoPostcodeButton } from '@/components/KakaoPostcodeButton';
+import {
+  CheckCircle2,
+  ChevronRight,
+  CreditCard,
+  Home,
+  MapPin,
+  PackageCheck,
+  PlusCircle,
+  ShieldCheck,
+  ShoppingBag,
+  Store,
+  Truck,
+} from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
+type SavedAddress = {
+  id: string;
+  label: string;
+  recipient: string;
+  phone: string;
+  zonecode: string | null;
+  address: string;
+  detail: string | null;
+  isDefault: boolean;
+};
 
 export function CheckoutClient() {
   const items = useCart((s) => s.items);
   const [buyerName, setBuyerName] = useState('');
   const [buyerPhone, setBuyerPhone] = useState('');
+  const [pickupMemo, setPickupMemo] = useState('');
+  const [zonecode, setZonecode] = useState('');
   const [address, setAddress] = useState('');
+  const [addressDetail, setAddressDetail] = useState('');
+  const [addressLabel, setAddressLabel] = useState('우리집');
+  const [saveAddress, setSaveAddress] = useState(true);
+  const [canUseAddressBook, setCanUseAddressBook] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState('');
   const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'delivery'>('pickup');
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -19,11 +51,15 @@ export function CheckoutClient() {
   const deliveryFee = deliveryMethod === 'pickup' || subtotal === 0 || subtotal >= 30000 ? 0 : 3000;
   const total = subtotal + deliveryFee;
   const normalizedPhone = buyerPhone.replaceAll('-', '').replaceAll(' ', '');
+  const fullAddress = useMemo(
+    () => [zonecode ? `(${zonecode})` : '', address, addressDetail].filter(Boolean).join(' '),
+    [address, addressDetail, zonecode],
+  );
   const firstMissing = useMemo(() => {
     if (!items.length) return '장바구니에 상품을 담아주세요.';
     if (!buyerName.trim()) return '주문자 이름을 입력해주세요.';
     if (!/^01\d{8,9}$/.test(normalizedPhone)) return '연락처를 정확히 입력해주세요.';
-    if (deliveryMethod === 'delivery' && !address.trim()) return '배송지를 입력해주세요.';
+    if (deliveryMethod === 'delivery' && !address.trim()) return '배송지를 검색해주세요.';
     if (!agree) return '주문 내용 확인 동의가 필요해요.';
     return '안전 결제 준비가 완료됐어요.';
   }, [address, agree, buyerName, deliveryMethod, items.length, normalizedPhone]);
@@ -35,16 +71,96 @@ export function CheckoutClient() {
     return agree;
   }, [address, agree, buyerName, deliveryMethod, items.length, normalizedPhone]);
 
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadAddresses() {
+      const res = await fetch('/api/addresses', { cache: 'no-store' });
+      if (ignore) return;
+      if (res.status === 401) {
+        setCanUseAddressBook(false);
+        return;
+      }
+      if (!res.ok) return;
+
+      const data = (await res.json()) as { addresses: SavedAddress[] };
+      setCanUseAddressBook(true);
+      setSavedAddresses(data.addresses);
+
+      const first = data.addresses.find((item) => item.isDefault) || data.addresses[0];
+      if (first) selectAddress(first);
+    }
+
+    loadAddresses();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  function selectAddress(nextAddress: SavedAddress) {
+    setSelectedAddressId(nextAddress.id);
+    setBuyerName(nextAddress.recipient);
+    setBuyerPhone(nextAddress.phone);
+    setZonecode(nextAddress.zonecode || '');
+    setAddress(nextAddress.address);
+    setAddressDetail(nextAddress.detail || '');
+    setDeliveryMethod('delivery');
+    setSaveAddress(false);
+  }
+
+  function clearForNewAddress() {
+    setSelectedAddressId('');
+    setZonecode('');
+    setAddress('');
+    setAddressDetail('');
+    setSaveAddress(canUseAddressBook);
+  }
+
+  async function saveCurrentAddress() {
+    if (!canUseAddressBook || deliveryMethod !== 'delivery' || !saveAddress || selectedAddressId || !address.trim()) return;
+
+    const res = await fetch('/api/addresses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        label: addressLabel,
+        recipient: buyerName,
+        phone: normalizedPhone,
+        zonecode,
+        address,
+        detail: addressDetail,
+        isDefault: savedAddresses.length === 0,
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ message: '배송지 저장 실패' }));
+      throw new Error(data.message || '배송지를 저장하지 못했어요.');
+    }
+  }
+
   async function pay() {
     try {
       if (!items.length) return alert('장바구니가 비어 있어요.');
       if (!buyerName.trim()) return alert('이름을 입력해주세요.');
       if (!/^01\d{8,9}$/.test(normalizedPhone)) return alert('연락처를 정확히 입력해주세요.');
-      if (deliveryMethod === 'delivery' && !address.trim()) return alert('배송지를 입력해주세요.');
+      if (deliveryMethod === 'delivery' && !address.trim()) return alert('배송지를 검색해주세요.');
       if (!agree) return alert('주문 내용을 확인하고 동의해주세요.');
       setLoading(true);
+      await saveCurrentAddress();
       const tossOrderId = `IAMNONGBU-${Date.now()}`;
-      const createRes = await fetch('/api/orders/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items, buyerName, buyerPhone: normalizedPhone, address: deliveryMethod === 'pickup' ? '매장 픽업' : address, deliveryMethod, tossOrderId }) });
+      const createRes = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items,
+          buyerName,
+          buyerPhone: normalizedPhone,
+          address: deliveryMethod === 'pickup' ? pickupMemo : fullAddress,
+          deliveryMethod,
+          tossOrderId,
+        }),
+      });
       if (!createRes.ok) throw new Error((await createRes.json()).message || '주문 생성 실패');
       const order = await createRes.json() as { totalAmount: number; orderNo: string };
 
@@ -57,16 +173,16 @@ export function CheckoutClient() {
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
       await payment.requestPayment({ method: 'CARD', amount: { currency: 'KRW', value: order.totalAmount }, orderId: tossOrderId, orderName: items.length === 1 ? items[0].name : `${items[0].name} 외 ${items.length - 1}건`, successUrl: `${baseUrl}/checkout/success`, failUrl: `${baseUrl}/checkout/fail`, customerName: buyerName, customerMobilePhone: normalizedPhone });
     } catch (error) {
-  console.error('TOSS_PAYMENT_ERROR:', error);
+      console.error('TOSS_PAYMENT_ERROR:', error);
 
-  if (error instanceof Error) {
-    console.error('TOSS_PAYMENT_ERROR_MESSAGE:', error.message);
-    console.error('TOSS_PAYMENT_ERROR_STACK:', error.stack);
-  }
+      if (error instanceof Error) {
+        console.error('TOSS_PAYMENT_ERROR_MESSAGE:', error.message);
+        console.error('TOSS_PAYMENT_ERROR_STACK:', error.stack);
+      }
 
-  alert(error instanceof Error ? error.message : '결제 준비 중 문제가 생겼어요.');
-  setLoading(false);
-}
+      alert(error instanceof Error ? error.message : '결제 준비 중 문제가 생겼어요.');
+      setLoading(false);
+    }
   }
 
   return (
@@ -128,12 +244,85 @@ export function CheckoutClient() {
             </button>
           ))}
         </div>
-        <label className="mt-4 block">
-          <span className="mb-2 block text-xs font-black text-[#7a6b4d]">
-            {deliveryMethod === 'pickup' ? '픽업 요청사항' : '배송지'}
-          </span>
-          <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={deliveryMethod === 'pickup' ? '예: 오후 6시 픽업 예정' : '주소와 공동현관 정보를 입력해주세요'} className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
-        </label>
+
+        {deliveryMethod === 'delivery' ? (
+          <div className="mt-4 space-y-4">
+            {canUseAddressBook && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-[#7a6b4d]">저장된 배송지</span>
+                  <button type="button" onClick={clearForNewAddress} className="inline-flex items-center gap-1 text-xs font-black text-[#214b36]">
+                    <PlusCircle size={14} /> 새 배송지
+                  </button>
+                </div>
+                {savedAddresses.length > 0 ? (
+                  <div className="space-y-2">
+                    {savedAddresses.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => selectAddress(item)}
+                        className={`w-full rounded-2xl p-4 text-left active:scale-[.99] ${
+                          selectedAddressId === item.id
+                            ? 'bg-[#e5f0dc] ring-2 ring-[#668f6b]'
+                            : 'bg-[#fffaf0]'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2 text-sm font-black text-[#1f2a24]">
+                          <Home size={16} className="text-[#668f6b]" />
+                          {item.label}
+                          {item.isDefault && <span className="rounded-full bg-white px-2 py-1 text-[10px] text-[#214b36]">기본</span>}
+                        </span>
+                        <span className="mt-2 block text-xs font-bold leading-5 text-[#7a6b4d]">
+                          {item.recipient} · {item.phone}<br />
+                          {item.zonecode ? `(${item.zonecode}) ` : ''}{item.address} {item.detail || ''}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="rounded-2xl bg-[#fffaf0] p-4 text-xs font-bold text-[#7a6b4d]">
+                    저장된 배송지가 없어요. 주소를 검색해 첫 배송지를 저장해보세요.
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <input value={zonecode} readOnly placeholder="우편번호" className="min-w-0 flex-1 rounded-2xl bg-[#fffaf0] p-4 outline-none" />
+                <KakaoPostcodeButton
+                  onSelect={(data) => {
+                    setSelectedAddressId('');
+                    setZonecode(data.zonecode);
+                    setAddress(data.address);
+                    setSaveAddress(canUseAddressBook);
+                  }}
+                  className="shrink-0"
+                />
+              </div>
+              <input value={address} readOnly placeholder="주소 검색을 눌러 주소를 입력해주세요" className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none" />
+              <input value={addressDetail} onChange={(e) => setAddressDetail(e.target.value)} placeholder="상세주소와 공동현관 정보를 입력해주세요" className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
+              {canUseAddressBook && !selectedAddressId && (
+                <div className="rounded-2xl bg-[#fcfbf6] p-4">
+                  <label className="flex items-center gap-3 text-sm font-black text-[#214b36]">
+                    <input checked={saveAddress} onChange={(e) => setSaveAddress(e.target.checked)} type="checkbox" className="h-4 w-4 accent-[#214b36]" />
+                    이 배송지를 저장
+                  </label>
+                  {saveAddress && (
+                    <input value={addressLabel} onChange={(e) => setAddressLabel(e.target.value)} placeholder="배송지 이름 예: 우리집" className="mt-3 w-full rounded-2xl bg-white p-3 text-sm outline-none focus:ring-2 focus:ring-[#668f6b]" />
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <label className="mt-4 block">
+            <span className="mb-2 block text-xs font-black text-[#7a6b4d]">픽업 요청사항</span>
+            <input value={pickupMemo} onChange={(e) => setPickupMemo(e.target.value)} placeholder="예: 오후 6시 픽업 예정" className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
+          </label>
+        )}
+
         <p className="mt-3 flex items-center gap-2 text-[12px] font-bold text-[#668f6b]">
           <MapPin size={15} /> {deliveryMethod === 'pickup' ? '매장 픽업은 배송비 없이 준비됩니다.' : '30,000원 이상 주문 시 배송비가 무료입니다.'}
         </p>

@@ -3,12 +3,15 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
-import { ShieldCheck, UserPlus } from 'lucide-react';
+import { MapPin, ShieldCheck, UserPlus } from 'lucide-react';
+import { KakaoPostcodeButton } from '@/components/KakaoPostcodeButton';
 
 export default function SignupPage() {
   const router = useRouter();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [zonecode, setZonecode] = useState('');
+  const [address, setAddress] = useState('');
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -58,6 +61,44 @@ export default function SignupPage() {
           <span className="mb-2 block text-xs font-black text-[#7a6b4d]">비밀번호</span>
           <input name="password" type="password" placeholder="8자 이상" className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
         </label>
+      </section>
+
+      <section className="mt-4 space-y-3 rounded-3xl bg-white p-5">
+        <h2 className="flex items-center gap-2 font-black text-[#1f2a24]">
+          <MapPin size={18} className="text-[#668f6b]" />
+          기본 배송지
+        </h2>
+        <p className="text-xs font-bold leading-5 text-[#7a6b4d]">
+          미리 등록해두면 주문할 때 배송지가 자동으로 채워져요.
+        </p>
+        <input type="hidden" name="zonecode" value={zonecode} />
+        <input type="hidden" name="address" value={address} />
+        <div className="flex gap-2">
+          <input
+            value={zonecode}
+            readOnly
+            placeholder="우편번호"
+            className="min-w-0 flex-1 rounded-2xl bg-[#fffaf0] p-4 outline-none"
+          />
+          <KakaoPostcodeButton
+            onSelect={(data) => {
+              setZonecode(data.zonecode);
+              setAddress(data.address);
+            }}
+            className="shrink-0"
+          />
+        </div>
+        <input
+          value={address}
+          readOnly
+          placeholder="주소 검색을 눌러 주소를 입력해주세요"
+          className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none"
+        />
+        <input
+          name="addressDetail"
+          placeholder="상세주소 예: 102호"
+          className="w-full rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]"
+        />
       </section>
 
       <p className="mt-4 flex gap-2 rounded-2xl bg-[#e5f0dc] p-4 text-xs font-bold leading-5 text-[#214b36]">
