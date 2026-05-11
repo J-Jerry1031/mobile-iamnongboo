@@ -16,7 +16,9 @@ import {
   ShieldCheck,
   ShoppingBag,
   Store,
+  TicketPercent,
   Truck,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -32,6 +34,17 @@ type SavedAddress = {
   isDefault: boolean;
 };
 
+type AvailableCoupon = {
+  code: string;
+  name: string;
+  discountType: string;
+  discountValue: number;
+  minOrderAmount: number;
+  maxDiscount: number | null;
+  discountAmount: number;
+  unavailableReason: string;
+};
+
 export function CheckoutClient() {
   const items = useCart((s) => s.items);
   const [buyerName, setBuyerName] = useState('');
@@ -45,9 +58,11 @@ export function CheckoutClient() {
   const [canUseAddressBook, setCanUseAddressBook] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
-  const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; name: string; discountAmount: number } | null>(null);
   const [couponMessage, setCouponMessage] = useState('');
+  const [availableCoupons, setAvailableCoupons] = useState<AvailableCoupon[]>([]);
+  const [couponSheetOpen, setCouponSheetOpen] = useState(false);
+  const [couponLoading, setCouponLoading] = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'delivery'>('pickup');
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -144,23 +159,52 @@ export function CheckoutClient() {
     }
   }
 
-  async function applyCoupon() {
+  async function loadCoupons() {
+    try {
+      if (!items.length) {
+        setCouponMessage('장바구니에 상품을 담아주세요.');
+        return;
+      }
+      setCouponLoading(true);
+      setCouponMessage('');
+      const res = await fetch('/api/coupons/available', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items, deliveryMethod }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || '쿠폰을 불러오지 못했어요.');
+      setAvailableCoupons(data.coupons || []);
+      setCouponSheetOpen(true);
+    } catch (error) {
+      setCouponMessage(error instanceof Error ? error.message : '쿠폰을 불러오지 못했어요.');
+    } finally {
+      setCouponLoading(false);
+    }
+  }
+
+  async function applyCoupon(code: string) {
     try {
       setCouponMessage('');
       const res = await fetch('/api/coupons/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: couponCode, items, deliveryMethod }),
+        body: JSON.stringify({ code, items, deliveryMethod }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || '쿠폰 적용 실패');
       setAppliedCoupon(data.coupon);
-      setCouponCode(data.coupon.code);
       setCouponMessage(`${data.coupon.name} 쿠폰이 적용됐어요.`);
+      setCouponSheetOpen(false);
     } catch (error) {
       setAppliedCoupon(null);
       setCouponMessage(error instanceof Error ? error.message : '쿠폰을 적용하지 못했어요.');
     }
+  }
+
+  function clearCoupon() {
+    setAppliedCoupon(null);
+    setCouponMessage('쿠폰 적용을 해제했어요.');
   }
 
   async function pay() {
@@ -211,7 +255,7 @@ export function CheckoutClient() {
   }
 
   return (
-    <div className="px-5 pb-40 pt-5">
+    <div className="px-5 pb-8 pt-5">
       <div className="rounded-[24px] bg-[#214b36] p-5 text-white">
         <p className="text-[12px] font-bold text-[#f5d87a]">CHECKOUT</p>
         <h1 className="mt-2 text-2xl font-black">주문/결제</h1>
@@ -246,15 +290,37 @@ export function CheckoutClient() {
       </section>
 
       <section className="mt-4 rounded-3xl bg-white p-5">
-        <h2 className="flex items-center gap-2 font-black">
-          <CheckCircle2 size={19} className="text-[#668f6b]" /> 쿠폰/할인
-        </h2>
-        <div className="mt-4 flex gap-2">
-          <input value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="쿠폰 코드" className="min-w-0 flex-1 rounded-2xl bg-[#fffaf0] p-4 outline-none focus:ring-2 focus:ring-[#668f6b]" />
-          <button type="button" onClick={applyCoupon} className="shrink-0 rounded-2xl bg-[#214b36] px-4 text-sm font-black text-white">
-            적용
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 font-black">
+            <TicketPercent size={19} className="text-[#668f6b]" /> 쿠폰/할인
+          </h2>
+          <button
+            type="button"
+            onClick={loadCoupons}
+            disabled={couponLoading}
+            className="shrink-0 rounded-full bg-[#214b36] px-4 py-2 text-xs font-black text-white disabled:opacity-50"
+          >
+            {couponLoading ? '확인 중' : '보유한 쿠폰'}
           </button>
         </div>
+        {appliedCoupon ? (
+          <div className="mt-4 rounded-2xl bg-[#e5f0dc] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-black text-[#214b36]">{appliedCoupon.name}</p>
+                <p className="mt-1 text-[11px] font-bold text-[#668f6b]">{appliedCoupon.code}</p>
+              </div>
+              <span className="shrink-0 text-sm font-black text-[#214b36]">-{won(appliedCoupon.discountAmount)}</span>
+            </div>
+            <button type="button" onClick={clearCoupon} className="mt-3 text-xs font-black text-[#7a6b4d] underline underline-offset-4">
+              쿠폰 해제
+            </button>
+          </div>
+        ) : (
+          <p className="mt-4 rounded-2xl bg-[#fffaf0] p-4 text-xs font-bold leading-5 text-[#7a6b4d]">
+            관리자가 발급한 쿠폰이 있다면 보유한 쿠폰에서 선택해 적용할 수 있어요.
+          </p>
+        )}
         {couponMessage && (
           <p className={`mt-3 rounded-2xl p-3 text-xs font-black ${appliedCoupon ? 'bg-[#e5f0dc] text-[#214b36]' : 'bg-red-50 text-red-600'}`}>
             {couponMessage}
@@ -401,31 +467,73 @@ export function CheckoutClient() {
           {discountAmount > 0 && <div className="flex justify-between text-[#214b36]"><span>쿠폰할인</span><span>-{won(discountAmount)}</span></div>}
         </div>
         <div className="mt-4 flex justify-between border-t border-[#eadfce] pt-4 text-lg font-black"><span>총 결제금액</span><span>{won(total)}</span></div>
-      </section>
-
-      <label className="mt-4 flex items-start gap-3 rounded-2xl bg-white p-4 text-sm font-bold text-[#5b5141]">
-        <input checked={agree} onChange={(e) => setAgree(e.target.checked)} type="checkbox" className="mt-1 h-4 w-4 accent-[#214b36]" />
-        <span>주문 상품, 수령 방법, 결제 금액을 확인했으며 개인정보 수집 및 결제 진행에 동의합니다.</span>
-      </label>
-
-      <div className={`mt-4 flex items-center gap-2 rounded-2xl p-4 text-xs font-bold ${canPay ? 'bg-[#e5f0dc] text-[#214b36]' : 'bg-white text-[#7a6b4d]'}`}>
-        <CheckCircle2 size={15} className={canPay ? 'text-[#214b36]' : 'text-[#b2a282]'} />
-        {firstMissing}
-      </div>
-
-      <div className="fixed bottom-[calc(73px+env(safe-area-inset-bottom))] left-1/2 z-[35] w-full max-w-[430px] -translate-x-1/2 border-t border-[#eadfce] bg-white/95 px-5 py-3 shadow-[0_-12px_28px_rgba(31,42,36,.1)] backdrop-blur">
-        <div className="mb-3 rounded-2xl bg-[#fcfbf6] px-3 py-2 text-[11px] font-bold text-[#7a6b4d]">
-          <div className="flex justify-between"><span>상품 {won(subtotal)}</span><span>배송 {deliveryFee ? won(deliveryFee) : '무료'}</span></div>
-          {discountAmount > 0 && <div className="mt-1 flex justify-between text-[#214b36]"><span>{appliedCoupon?.name || '쿠폰할인'}</span><span>-{won(discountAmount)}</span></div>}
+        <label className="mt-5 flex items-start gap-3 rounded-2xl bg-[#fcfbf6] p-4 text-sm font-bold text-[#5b5141]">
+          <input checked={agree} onChange={(e) => setAgree(e.target.checked)} type="checkbox" className="mt-1 h-4 w-4 accent-[#214b36]" />
+          <span>주문 상품, 수령 방법, 결제 금액을 확인했으며 개인정보 수집 및 결제 진행에 동의합니다.</span>
+        </label>
+        <div className={`mt-4 flex items-center gap-2 rounded-2xl p-4 text-xs font-bold ${canPay ? 'bg-[#e5f0dc] text-[#214b36]' : 'bg-[#fffaf0] text-[#7a6b4d]'}`}>
+          <CheckCircle2 size={15} className={canPay ? 'text-[#214b36]' : 'text-[#b2a282]'} />
+          {firstMissing}
         </div>
-        <div className="mb-3 flex items-end justify-between">
-          <span className="text-sm font-bold text-[#7a6b4d]">결제 예정금액</span>
-          <span className="text-2xl font-black leading-none text-[#214b36]">{won(total)}</span>
-        </div>
-        <button disabled={loading || !canPay} onClick={pay} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#214b36] py-4 font-black text-white disabled:opacity-45 active:scale-[.99]">
+        <button disabled={loading || !canPay} onClick={pay} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#214b36] py-4 font-black text-white disabled:opacity-45 active:scale-[.99]">
           <CreditCard size={19} /> {loading ? '결제 준비 중...' : '결제하기'} <ChevronRight size={18} />
         </button>
-      </div>
+      </section>
+
+      {couponSheetOpen && (
+        <div className="fixed inset-0 z-[70] bg-black/35" role="dialog" aria-modal="true">
+          <button type="button" aria-label="쿠폰 선택 닫기" className="absolute inset-0 h-full w-full cursor-default" onClick={() => setCouponSheetOpen(false)} />
+          <div className="absolute bottom-0 left-1/2 w-full max-w-[430px] -translate-x-1/2 rounded-t-[28px] bg-white p-5 shadow-[0_-18px_40px_rgba(31,42,36,.18)]">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-lg font-black text-[#1f2a24]">보유한 쿠폰</p>
+                <p className="mt-1 text-xs font-bold text-[#7a6b4d]">주문에 적용할 쿠폰을 선택해주세요.</p>
+              </div>
+              <button type="button" onClick={() => setCouponSheetOpen(false)} className="grid h-9 w-9 place-items-center rounded-full bg-[#fffaf0] text-[#214b36]">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="mt-5 max-h-[55vh] space-y-3 overflow-y-auto pb-2">
+              {availableCoupons.map((coupon) => {
+                const disabled = Boolean(coupon.unavailableReason);
+                return (
+                  <button
+                    key={coupon.code}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => applyCoupon(coupon.code)}
+                    className={`w-full rounded-2xl p-4 text-left active:scale-[.99] disabled:active:scale-100 ${
+                      disabled
+                        ? 'bg-[#f6f2e8] text-[#b2a282] opacity-70'
+                        : appliedCoupon?.code === coupon.code
+                          ? 'bg-[#e5f0dc] ring-2 ring-[#668f6b]'
+                          : 'bg-[#fffaf0]'
+                    }`}
+                  >
+                    <span className="flex items-start justify-between gap-3">
+                      <span>
+                        <span className="block text-sm font-black text-[#1f2a24]">{coupon.name}</span>
+                        <span className="mt-1 block text-[11px] font-bold text-[#7a6b4d]">
+                          {coupon.minOrderAmount > 0 ? `${won(coupon.minOrderAmount)} 이상 주문` : '최소 주문금액 없음'}
+                          {coupon.maxDiscount ? ` · 최대 ${won(coupon.maxDiscount)}` : ''}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-sm font-black text-[#214b36]">
+                        {disabled ? coupon.unavailableReason : `-${won(coupon.discountAmount)}`}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+              {!availableCoupons.length && (
+                <div className="rounded-2xl bg-[#fffaf0] p-6 text-center text-sm font-bold text-[#7a6b4d]">
+                  지금 사용할 수 있는 쿠폰이 없어요.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

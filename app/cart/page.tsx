@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCart } from '@/lib/cart-store';
 import { won } from '@/lib/format';
-import { BadgeCheck, ChevronRight, Gift, PackageCheck, ShieldCheck, ShoppingBag, Trash2, Truck } from 'lucide-react';
+import { BadgeCheck, Gift, PackageCheck, ShieldCheck, ShoppingBag, Trash2, Truck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type RecommendedProduct = {
@@ -33,7 +33,7 @@ export default function CartPage() {
   }, [items]);
 
   return (
-    <div className="px-5 pb-36 pt-5">
+    <div className="px-5 pb-8 pt-5">
       <div className="rounded-[24px] bg-[#214b36] p-5 text-white">
         <p className="text-[12px] font-bold text-[#f5d87a]">CART</p>
         <h1 className="mt-2 text-2xl font-black">장바구니</h1>
@@ -161,18 +161,6 @@ export default function CartPage() {
           <PackageCheck size={19} /> {items.length ? '주문하기' : '상품 담으러 가기'}
         </Link>
       </div>
-
-      {items.length > 0 && (
-        <div className="fixed bottom-[calc(73px+env(safe-area-inset-bottom))] left-1/2 z-[35] w-full max-w-[430px] -translate-x-1/2 border-t border-[#eadfce] bg-white/95 px-5 py-3 shadow-[0_-12px_28px_rgba(31,42,36,.1)] backdrop-blur">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-sm font-bold text-[#7a6b4d]">총 결제금액</span>
-            <span className="text-xl font-black text-[#214b36]">{won(total)}</span>
-          </div>
-          <Link href="/checkout" className="flex items-center justify-center gap-2 rounded-2xl bg-[#214b36] py-4 font-black text-white active:scale-[.99]">
-            주문하기 <ChevronRight size={18} />
-          </Link>
-        </div>
-      )}
     </div>
   );
 }

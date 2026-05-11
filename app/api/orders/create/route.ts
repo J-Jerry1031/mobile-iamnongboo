@@ -64,9 +64,18 @@ export async function POST(req: Request) {
   const subtotal = orderItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const deliveryFee = deliveryMethod === 'delivery' && subtotal < 30000 ? 3000 : 0;
   const normalizedCouponCode = normalizeCouponCode(couponCode);
+  if (normalizedCouponCode && !user) {
+    return NextResponse.json({ message: '쿠폰 사용은 로그인이 필요해요.' }, { status: 401 });
+  }
   const coupon = normalizedCouponCode ? await prisma.coupon.findUnique({ where: { code: normalizedCouponCode } }) : null;
+  const usedCoupon = coupon && user
+    ? await prisma.couponRedemption.findFirst({
+        where: { couponId: coupon.id, userId: user.id },
+        select: { id: true },
+      })
+    : null;
   const discountAmount = coupon ? calculateCouponDiscount(coupon, subtotal, deliveryFee) : 0;
-  if (normalizedCouponCode && (!coupon || discountAmount <= 0)) {
+  if (normalizedCouponCode && (!coupon || usedCoupon || discountAmount <= 0)) {
     return NextResponse.json({ message: '사용할 수 없는 쿠폰입니다.' }, { status: 400 });
   }
   const totalAmount = subtotal + deliveryFee - discountAmount;

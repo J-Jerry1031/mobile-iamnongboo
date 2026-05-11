@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-lite';
 import { prisma } from '@/lib/prisma';
-import { calculateCouponDiscount, normalizeCouponCode } from '@/lib/coupons';
+import { calculateCouponDiscount } from '@/lib/coupons';
 import { asRecord, safeCuid } from '@/lib/security';
 import { rateLimit } from '@/lib/rate-limit';
 
@@ -11,33 +11,32 @@ type IncomingCartItem = {
 };
 
 export async function POST(req: Request) {
-  const limited = await rateLimit('coupon-apply', 30, 60_000);
+  const limited = await rateLimit('coupon-available', 30, 60_000);
   if (limited) return limited;
 
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ message: '로그인이 필요해요.' }, { status: 401 });
 
   const body = asRecord(await req.json());
-  const code = normalizeCouponCode(body.code);
   const items = Array.isArray(body.items) ? body.items as IncomingCartItem[] : [];
-  if (!code) return NextResponse.json({ message: '쿠폰 코드를 입력해주세요.' }, { status: 400 });
-  if (!items.length) return NextResponse.json({ message: '장바구니에 상품을 담아주세요.' }, { status: 400 });
+  if (!items.length) return NextResponse.json({ coupons: [] });
 
   const productIds = [...new Set(items.map((item) => safeCuid(item.id)).filter(Boolean))];
   if (productIds.length !== items.length) return NextResponse.json({ message: '상품 정보가 올바르지 않아요.' }, { status: 400 });
 
-  const [coupon, products] = await Promise.all([
-    prisma.coupon.findUnique({ where: { code } }),
+  const [coupons, products, usedRedemptions] = await Promise.all([
+    prisma.coupon.findMany({
+      where: { isActive: true },
+      orderBy: [{ createdAt: 'desc' }],
+    }),
     prisma.product.findMany({ where: { id: { in: productIds }, isActive: true } }),
+    prisma.couponRedemption.findMany({
+      where: { userId: user.id },
+      select: { couponId: true },
+    }),
   ]);
-  if (!coupon) return NextResponse.json({ message: '사용할 수 없는 쿠폰입니다.' }, { status: 404 });
 
-  const usedCoupon = await prisma.couponRedemption.findFirst({
-    where: { couponId: coupon.id, userId: user.id },
-    select: { id: true },
-  });
-  if (usedCoupon) return NextResponse.json({ message: '이미 사용한 쿠폰입니다.' }, { status: 400 });
-
+  const usedCouponIds = new Set(usedRedemptions.map((item) => item.couponId));
   const productMap = new Map(products.map((product) => [product.id, product]));
   const subtotal = items.reduce((sum, item) => {
     const product = productMap.get(item.id);
@@ -46,14 +45,28 @@ export async function POST(req: Request) {
   }, 0);
   const deliveryMethod = body.deliveryMethod === 'delivery' ? 'delivery' : 'pickup';
   const deliveryFee = deliveryMethod === 'delivery' && subtotal > 0 && subtotal < 30000 ? 3000 : 0;
-  const discountAmount = calculateCouponDiscount(coupon, subtotal, deliveryFee);
-  if (discountAmount <= 0) return NextResponse.json({ message: '주문 조건에 맞지 않는 쿠폰입니다.' }, { status: 400 });
 
   return NextResponse.json({
-    coupon: {
-      code: coupon.code,
-      name: coupon.name,
-      discountAmount,
-    },
+    coupons: coupons.map((coupon) => {
+      const discountAmount = usedCouponIds.has(coupon.id) ? 0 : calculateCouponDiscount(coupon, subtotal, deliveryFee);
+      const unavailableReason = usedCouponIds.has(coupon.id)
+        ? '이미 사용한 쿠폰'
+        : discountAmount <= 0
+          ? coupon.minOrderAmount > subtotal + deliveryFee
+            ? `최소 ${coupon.minOrderAmount.toLocaleString('ko-KR')}원 이상`
+            : '사용 조건 미충족'
+          : '';
+
+      return {
+        code: coupon.code,
+        name: coupon.name,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
+        minOrderAmount: coupon.minOrderAmount,
+        maxDiscount: coupon.maxDiscount,
+        discountAmount,
+        unavailableReason,
+      };
+    }),
   });
 }
