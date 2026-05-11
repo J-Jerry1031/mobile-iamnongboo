@@ -139,28 +139,22 @@ export default function CartPage() {
         </section>
       )}
 
-      <div className="mt-6 rounded-3xl bg-white p-5 shadow-sm">
-        {items.length > 0 ? (
-          <>
-            <div className="space-y-3 text-sm font-bold text-[#5b5141]">
-              <div className="flex justify-between"><span>상품금액</span><span>{won(subtotal)}</span></div>
-              <div className="flex justify-between"><span>배송비</span><span>{deliveryFee ? won(deliveryFee) : '무료'}</span></div>
-              <div className="flex items-center gap-2 rounded-2xl bg-[#fcfbf6] p-3 text-[12px] text-[#668f6b]">
-                <Truck size={16} />
-                {subtotal >= 30000 ? '무료배송이 적용됐어요.' : `무료배송까지 ${won(Math.max(0, 30000 - subtotal))} 남았어요.`}
-              </div>
+      {items.length > 0 && (
+        <div className="mt-6 rounded-3xl bg-white p-5 shadow-sm">
+          <div className="space-y-3 text-sm font-bold text-[#5b5141]">
+            <div className="flex justify-between"><span>상품금액</span><span>{won(subtotal)}</span></div>
+            <div className="flex justify-between"><span>배송비</span><span>{deliveryFee ? won(deliveryFee) : '무료'}</span></div>
+            <div className="flex items-center gap-2 rounded-2xl bg-[#fcfbf6] p-3 text-[12px] text-[#668f6b]">
+              <Truck size={16} />
+              {subtotal >= 30000 ? '무료배송이 적용됐어요.' : `무료배송까지 ${won(Math.max(0, 30000 - subtotal))} 남았어요.`}
             </div>
-            <div className="mt-5 flex justify-between border-t border-[#eadfce] pt-5 text-lg font-black text-[#1f2a24]"><span>총 결제금액</span><span>{won(total)}</span></div>
-          </>
-        ) : (
-          <p className="text-center text-sm font-bold leading-6 text-[#7a6b4d]">
-            마음에 드는 상품을 담으면 결제금액과 배송비가 여기에 표시돼요.
-          </p>
-        )}
-        <Link href={items.length ? '/checkout' : '/products/market'} className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-[#214b36] py-4 text-center font-black text-white">
-          <PackageCheck size={19} /> {items.length ? '주문하기' : '상품 담으러 가기'}
-        </Link>
-      </div>
+          </div>
+          <div className="mt-5 flex justify-between border-t border-[#eadfce] pt-5 text-lg font-black text-[#1f2a24]"><span>총 결제금액</span><span>{won(total)}</span></div>
+          <Link href="/checkout" className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-[#214b36] py-4 text-center font-black text-white">
+            <PackageCheck size={19} /> 주문하기
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

@@ -59,6 +59,15 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
     },
   });
   if (!product) notFound();
+  const activeCoupon = await prisma.coupon.findFirst({
+    where: {
+      isActive: true,
+      OR: [{ startsAt: null }, { startsAt: { lte: new Date() } }],
+      AND: [{ OR: [{ endsAt: null }, { endsAt: { gte: new Date() } }] }],
+    },
+    select: { id: true },
+  });
+  const hasActiveCoupon = Boolean(activeCoupon);
   const averageRating = product.reviews.length
   ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
   : 0;
@@ -68,7 +77,6 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   }));
 
   const deliveryFee = product.price >= 30000 ? 0 : 3000;
-  const couponPrice = Math.max(0, product.price - 3000);
   const expectedDeliveryDate = new Date();
   expectedDeliveryDate.setDate(expectedDeliveryDate.getDate() + 1);
   const expectedDelivery = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' }).format(expectedDeliveryDate);
@@ -127,7 +135,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
       <section className="px-5 pt-5">
         <div className="flex flex-wrap gap-2">
           {product.badge && <p className="inline-flex rounded-full bg-[#e5f0dc] px-3 py-1 text-xs font-black text-[#214b36]">{product.badge}</p>}
-          <p className="inline-flex rounded-full bg-[#fffaf0] px-3 py-1 text-xs font-black text-[#668f6b]">WELCOME3000 쿠폰</p>
+          {hasActiveCoupon && <p className="inline-flex rounded-full bg-[#fffaf0] px-3 py-1 text-xs font-black text-[#668f6b]">보유 쿠폰 적용 가능</p>}
         </div>
         <h1 className="mt-3 text-[25px] font-black leading-[1.24] text-[#1f2a24]">{product.name}</h1>
         <a href="#review-info" className="mt-2 flex items-center gap-1 text-sm font-bold text-[#7a6b4d]">
@@ -138,13 +146,15 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
         <div className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-black text-[#7a6b4d]">쿠폰 적용가</p>
-              <p className="mt-1 text-[28px] font-black leading-none text-[#214b36]">{won(couponPrice)}</p>
-              <p className="mt-2 text-sm font-bold text-[#9b8d73] line-through">{won(product.price)}</p>
+              <p className="text-xs font-black text-[#7a6b4d]">판매가</p>
+              <p className="mt-1 text-[28px] font-black leading-none text-[#214b36]">{won(product.price)}</p>
+              {hasActiveCoupon && <p className="mt-2 text-sm font-bold text-[#668f6b]">결제 단계에서 보유 쿠폰을 선택할 수 있어요.</p>}
             </div>
-            <span className="rounded-2xl bg-[#e5f0dc] px-3 py-2 text-xs font-black text-[#214b36]">
-              최대 {won(3000)} 할인
-            </span>
+            {hasActiveCoupon && (
+              <span className="rounded-2xl bg-[#e5f0dc] px-3 py-2 text-xs font-black text-[#214b36]">
+                쿠폰 적용 가능
+              </span>
+            )}
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-[#5b5141]">
             <div className="rounded-2xl bg-[#fcfbf6] p-3">

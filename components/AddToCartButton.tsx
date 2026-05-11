@@ -27,7 +27,14 @@ export function AddToCartButton({
           : 'mt-4'
       }
     >
-      {sticky && (
+      {sticky && done && (
+        <div className="mb-2 flex items-center justify-end">
+          <span className="rounded-full bg-[#e5f0dc] px-3 py-1 text-[11px] font-black text-[#214b36]">
+            장바구니에 담겼어요
+          </span>
+        </div>
+      )}
+      {!sticky && (
         <div className="mb-3 flex items-center justify-between">
           <div>
             <p className="line-clamp-1 text-sm font-black text-[#1f2a24]">{product.name}</p>
@@ -45,12 +52,19 @@ export function AddToCartButton({
           현재 품절되어 주문할 수 없어요
         </p>
       )}
-      <div className="mb-3 flex items-center justify-between rounded-2xl bg-white p-3 ring-1 ring-[#eadfce]">
-        <span className="text-sm font-black text-[#214b36]">수량</span>
+      <div className={`${sticky ? 'mb-2 p-2' : 'mb-3 p-3'} flex items-center justify-between rounded-2xl bg-white ring-1 ring-[#eadfce]`}>
+        {sticky ? (
+          <span>
+            <span className="block text-[10px] font-bold text-[#7a6b4d]">총 상품금액</span>
+            <span className="block text-sm font-black text-[#214b36]">{won(product.price * qty)}</span>
+          </span>
+        ) : (
+          <span className="text-sm font-black text-[#214b36]">수량</span>
+        )}
         <div className="flex items-center gap-3">
-          <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="h-9 w-9 rounded-full bg-[#f1ead9] font-black">-</button>
+          <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className={`${sticky ? 'h-8 w-8' : 'h-9 w-9'} rounded-full bg-[#f1ead9] font-black`}>-</button>
           <span className="w-8 text-center font-black">{qty}</span>
-          <button type="button" onClick={() => setQty(Math.min(maxQty, qty + 1))} className="h-9 w-9 rounded-full bg-[#f1ead9] font-black">+</button>
+          <button type="button" onClick={() => setQty(Math.min(maxQty, qty + 1))} className={`${sticky ? 'h-8 w-8' : 'h-9 w-9'} rounded-full bg-[#f1ead9] font-black`}>+</button>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -58,7 +72,7 @@ export function AddToCartButton({
           type="button"
           onClick={() => { add(product, qty); setDone(true); window.setTimeout(() => setDone(false), 1400); }}
           disabled={!available}
-          className="rounded-2xl bg-[#f1ead9] px-5 py-4 text-sm font-black text-[#214b36] active:scale-[.99] disabled:opacity-45"
+          className={`${sticky ? 'py-3' : 'py-4'} rounded-2xl bg-[#f1ead9] px-5 text-sm font-black text-[#214b36] active:scale-[.99] disabled:opacity-45`}
         >
           {!available ? '품절' : done ? '담겼어요 ✓' : '장바구니'}
         </button>
@@ -66,7 +80,7 @@ export function AddToCartButton({
           type="button"
           onClick={() => { add(product, qty); router.push('/cart'); }}
           disabled={!available}
-          className="rounded-2xl bg-[#214b36] px-5 py-4 text-sm font-black text-white active:scale-[.99] disabled:opacity-45"
+          className={`${sticky ? 'py-3' : 'py-4'} rounded-2xl bg-[#214b36] px-5 text-sm font-black text-white active:scale-[.99] disabled:opacity-45`}
         >
           {!available ? '주문불가' : '바로구매'}
         </button>

@@ -5,6 +5,8 @@ import {
   BadgeCheck,
   ChevronRight,
   Clock3,
+  Apple,
+  Fish,
   Leaf,
   PackageCheck,
   Search,
@@ -15,10 +17,10 @@ import {
 export const dynamic = 'force-dynamic';
 
 const categories = [
-  { label: '유기농', emoji: '🌱', value: '유기농' },
-  { label: '과일', emoji: '🍎', value: '과일' },
-  { label: '건어물', emoji: '🐟', value: '수산물' },
-  { label: '생활품', emoji: '🧴', value: '생활용품' },
+  { label: '유기농', icon: Leaf, value: '유기농' },
+  { label: '과일', icon: Apple, value: '과일' },
+  { label: '수산', icon: Fish, value: '수산물' },
+  { label: '반찬', icon: PackageCheck, value: '반찬' },
 ];
 
 const trustItems = [
@@ -67,24 +69,27 @@ export default async function HomePage() {
       {/* 카테고리 원형 메뉴 */}
       <section className="border-b border-[#eeeeee] px-6 pb-6 pt-6">
         <div className="grid grid-cols-4 gap-4 text-center">
-          {categories.map((cat, index) => (
+          {categories.map((cat, index) => {
+            const Icon = cat.icon;
+
+            return (
             <Link
               key={cat.value}
               href={`/products/market?category=${encodeURIComponent(cat.value)}`}
               className="flex flex-col items-center gap-3"
             >
               <div
-                className={`flex h-[62px] w-[62px] items-center justify-center rounded-full text-2xl ${
+                className={`flex h-[62px] w-[62px] items-center justify-center rounded-full ${
                   index === 0 ? 'bg-[#6f9878] text-white' : 'bg-[#f2f2f2]'
                 }`}
               >
-                {cat.emoji}
+                <Icon size={27} strokeWidth={1.8} />
               </div>
               <span className="text-[13px] font-bold text-[#1f2a24]">
                 {cat.label}
               </span>
             </Link>
-          ))}
+          )})}
         </div>
       </section>
 

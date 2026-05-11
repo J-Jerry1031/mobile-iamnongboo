@@ -56,6 +56,15 @@ export default async function ProductList({
       reviews: { select: { rating: true } },
     },
   });
+  const activeCoupon = await prisma.coupon.findFirst({
+    where: {
+      isActive: true,
+      OR: [{ startsAt: null }, { startsAt: { lte: new Date() } }],
+      AND: [{ OR: [{ endsAt: null }, { endsAt: { gte: new Date() } }] }],
+    },
+    select: { id: true },
+  });
+  const hasActiveCoupon = Boolean(activeCoupon);
 
   const buildHref = (next: { category?: string; sort?: string; q?: string; free?: boolean; inStock?: boolean; pick?: boolean }) => {
     const nextCategory = next.category ?? category;
@@ -76,18 +85,18 @@ export default async function ProductList({
   };
 
   return (
-    <div className="px-5 pt-5">
-      <div className="rounded-[24px] bg-[#214b36] p-5 text-white">
+    <div className="px-5 pt-4">
+      <div className="rounded-[22px] bg-[#214b36] p-4 text-white">
         <p className="text-[12px] font-bold text-[#f5d87a]">MARKET</p>
-        <h1 className="mt-2 text-2xl font-black">
+        <h1 className="mt-1.5 text-[23px] font-black leading-tight">
           {q ? `"${q}" 검색결과` : category ? `${category} 상품` : '오늘의 상품'}
         </h1>
-        <p className="mt-2 text-[13px] leading-5 text-white/75">
+        <p className="mt-1.5 text-[12px] leading-5 text-white/75">
           산지에서 들어온 상품을 신선도와 판매 상태 기준으로 보여드려요.
         </p>
       </div>
 
-      <form action="/products/market" className="mt-4 flex h-12 items-center gap-3 rounded-[18px] bg-white px-4 text-[13px] font-bold text-[#7a6b4d]">
+      <form action="/products/market" className="mt-3 flex h-11 items-center gap-3 rounded-[16px] bg-white px-4 text-[13px] font-bold text-[#7a6b4d] ring-1 ring-[#f1ead9]">
         <Search size={18} className="shrink-0" />
         {category && <input type="hidden" name="category" value={category} />}
         {sort !== 'new' && <input type="hidden" name="sort" value={sort} />}
@@ -115,7 +124,7 @@ export default async function ProductList({
         </div>
       )}
 
-      <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+      <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
         {categories.map((cat) => {
           const active = cat.value === category;
 
@@ -123,10 +132,10 @@ export default async function ProductList({
             <Link
               key={cat.label}
               href={buildHref({ category: cat.value })}
-              className={`shrink-0 rounded-full px-4 py-2 text-sm font-black ${
+              className={`shrink-0 rounded-full px-3.5 py-2 text-[13px] font-black ${
                 active
                   ? 'bg-[#214b36] text-white'
-                  : 'bg-white text-[#214b36]'
+                  : 'bg-white text-[#214b36] ring-1 ring-[#f1ead9]'
               }`}
             >
               {cat.label}
@@ -135,12 +144,12 @@ export default async function ProductList({
         })}
       </div>
 
-      <div className="mt-2 flex items-center justify-between">
+      <div className="mt-2 flex items-center justify-between gap-3">
         <p className="flex items-center gap-1 text-[12px] font-bold text-[#7a6b4d]">
           <SlidersHorizontal size={15} />
           총 {products.length}개
         </p>
-        <div className="flex gap-2">
+        <div className="flex shrink-0 gap-1.5">
           {[
             { label: '신상품순', value: 'new' },
             { label: '낮은가격순', value: 'price-low' },
@@ -149,10 +158,10 @@ export default async function ProductList({
             <Link
               key={option.value}
               href={buildHref({ sort: option.value })}
-              className={`rounded-full px-3 py-1.5 text-[11px] font-black ${
+              className={`rounded-full px-2.5 py-1.5 text-[10px] font-black ${
                 sort === option.value
                   ? 'bg-[#668f6b] text-white'
-                  : 'bg-white text-[#5b5141]'
+                  : 'bg-white text-[#5b5141] ring-1 ring-[#f1ead9]'
               }`}
             >
               {option.label}
@@ -161,13 +170,13 @@ export default async function ProductList({
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-3 gap-2">
+      <div className="mt-2 grid grid-cols-3 gap-2">
         {[
           { label: '무료배송', active: freeOnly, href: buildHref({ free: !freeOnly }) },
           { label: '품절 제외', active: inStockOnly, href: buildHref({ inStock: !inStockOnly }) },
           { label: '농부추천', active: pickOnly, href: buildHref({ pick: !pickOnly }) },
         ].map((filter) => (
-          <Link key={filter.label} href={filter.href} className={`rounded-2xl px-3 py-3 text-center text-xs font-black ${filter.active ? 'bg-[#214b36] text-white' : 'bg-white text-[#214b36]'}`}>
+          <Link key={filter.label} href={filter.href} className={`rounded-2xl px-3 py-2.5 text-center text-xs font-black ${filter.active ? 'bg-[#214b36] text-white' : 'bg-white text-[#214b36] ring-1 ring-[#f1ead9]'}`}>
             {filter.label}
           </Link>
         ))}
@@ -177,7 +186,6 @@ export default async function ProductList({
         {products.map((p) => {
           const reviewCount = p.reviews.length;
           const averageRating = reviewCount ? p.reviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount : 0;
-          const couponPrice = Math.max(0, p.price - 3000);
           return (
           <Link key={p.id} href={`/products/${p.id}`} className="block rounded-3xl bg-white p-3 shadow-sm active:scale-[.99]">
             <div className="relative">
@@ -195,18 +203,16 @@ export default async function ProductList({
             </div>
             <div className="mt-2 flex items-center gap-1 text-[10px] font-black text-[#668f6b]">
               {p.isFarmerPick && <span className="inline-flex items-center gap-1 rounded-full bg-[#e5f0dc] px-2 py-1"><Leaf size={11} /> 추천</span>}
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#fffaf0] px-2 py-1"><TicketPercent size={11} /> 쿠폰</span>
+              {hasActiveCoupon && <span className="inline-flex items-center gap-1 rounded-full bg-[#fffaf0] px-2 py-1"><TicketPercent size={11} /> 쿠폰</span>}
             </div>
             <p className="mt-2 text-[15px] font-black leading-snug">{p.name}</p>
             <p className="mt-1 line-clamp-2 min-h-[34px] text-[11px] leading-[17px] text-[#7a6b4d]">
               {p.description}
             </p>
-            <p className="mt-2 text-[11px] font-bold text-[#9b8d73] line-through">
+            <p className="mt-2 text-base font-black text-[#214b36]">
               {won(p.price)}
             </p>
-            <p className="text-base font-black text-[#214b36]">
-              {won(couponPrice)} <span className="text-[10px] text-[#668f6b]">쿠폰가</span>
-            </p>
+            {hasActiveCoupon && <p className="mt-1 text-[10px] font-bold text-[#668f6b]">결제 시 보유 쿠폰 선택 가능</p>}
             <div className="mt-2 flex items-center gap-1 text-[11px] font-bold text-[#7a6b4d]">
               <Star size={13} className="fill-[#f5d87a] text-[#f5d87a]" />
               {reviewCount ? `${averageRating.toFixed(1)} · 후기 ${reviewCount}` : '첫 후기를 기다려요'}
